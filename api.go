@@ -492,6 +492,72 @@ type requestsResponse struct {
 	Data       []Request
 }
 
+// ListIP is a whitelisted or blacklisted IP address.
+type ListIP struct {
+	ID        string
+	Source    string
+	Expires   time.Time
+	Note      string
+	CreatedBy string
+	Created   time.Time
+}
+
+// whitelistResponse is the response for the whitelist endpoint.
+type whitelistResponse struct {
+	Data []ListIP
+}
+
+// ListWhitelistIPs lists whitelisted IP addresses.
+func (sc *Client) ListWhitelistIPs(corpName, siteName string) ([]ListIP, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/whitelist", corpName, siteName), "")
+	if err != nil {
+		return []ListIP{}, err
+	}
+
+	var wr whitelistResponse
+	err = json.Unmarshal(resp, &wr)
+	if err != nil {
+		return []ListIP{}, err
+	}
+
+	return wr.Data, nil
+}
+
+// DeleteWhitelistIP deletes a whitelisted IP by id.
+func (sc *Client) DeleteWhitelistIP(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/whitelist/%s", corpName, siteName, id), "")
+
+	return err
+}
+
+// blacklistResponse is the response for the blacklist endpoint.
+type blacklistResponse struct {
+	Data []ListIP
+}
+
+// ListBlacklistIPs lists blacklisted IP addresses.
+func (sc *Client) ListBlacklistIPs(corpName, siteName string) ([]ListIP, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/blacklist", corpName, siteName), "")
+	if err != nil {
+		return []ListIP{}, err
+	}
+
+	var br blacklistResponse
+	err = json.Unmarshal(resp, &br)
+	if err != nil {
+		return []ListIP{}, err
+	}
+
+	return br.Data, nil
+}
+
+// DeleteBlacklistIP deletes a blacklisted IP by id.
+func (sc *Client) DeleteBlacklistIP(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/blacklist/%s", corpName, siteName, id), "")
+
+	return err
+}
+
 // Redaction contains the data for a privacy redaction
 type Redaction struct {
 	ID            string
@@ -595,6 +661,120 @@ func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, er
 	return i, nil
 }
 
+// DeleteIntegration deletes a redaction by id.
+func (sc *Client) DeleteIntegration(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/integrations/%s", corpName, siteName, id), "")
+
+	return err
+}
+
+// Param is a whitelisted parameter.
+type Param struct {
+	ID        string
+	Name      string
+	Type      string
+	Note      string
+	CreatedBy string
+	Created   time.Time
+}
+
+// paramsResponse is the response for the whitelisted params endpoint.
+type paramsResponse struct {
+	Data []Param
+}
+
+// ListParams lists whitelisted parameters.
+func (sc *Client) ListParams(corpName, siteName string) ([]Param, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist", corpName, siteName), "")
+	if err != nil {
+		return []Param{}, err
+	}
+
+	var pr paramsResponse
+	err = json.Unmarshal(resp, &pr)
+	if err != nil {
+		return []Param{}, err
+	}
+
+	return pr.Data, nil
+}
+
+// GetParam gets a whitelisted param by id.
+func (sc *Client) GetParam(corpName, siteName, id string) (Param, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist/%s", corpName, siteName, id), "")
+	if err != nil {
+		return Param{}, err
+	}
+
+	var p Param
+	err = json.Unmarshal(resp, &p)
+	if err != nil {
+		return Param{}, err
+	}
+
+	return p, nil
+}
+
+// DeleteParam deletes a whitelisted parameter by id.
+func (sc *Client) DeleteParam(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist/%s", corpName, siteName, id), "")
+
+	return err
+}
+
+// Path is a whitelisted path.
+type Path struct {
+	ID        string
+	Path      string
+	Note      string
+	CreatedBy string
+	Created   time.Time
+}
+
+// pathsResponse is the response for the whitelisted paths endpoint.
+type pathsResponse struct {
+	Data []Path
+}
+
+// ListPaths lists whitelisted paths.
+func (sc *Client) ListPaths(corpName, siteName string) ([]Path, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist", corpName, siteName), "")
+	if err != nil {
+		return []Path{}, err
+	}
+
+	var pr pathsResponse
+	err = json.Unmarshal(resp, &pr)
+	if err != nil {
+		return []Path{}, err
+	}
+
+	return pr.Data, nil
+}
+
+// GetPath gets a whitelisted path by id.
+func (sc *Client) GetPath(corpName, siteName, id string) (Path, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist/%s", corpName, siteName, id), "")
+	if err != nil {
+		return Path{}, err
+	}
+
+	var p Path
+	err = json.Unmarshal(resp, &p)
+	if err != nil {
+		return Path{}, err
+	}
+
+	return p, nil
+}
+
+// DeletePath deletes a whitelisted path by id.
+func (sc *Client) DeletePath(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist/%s", corpName, siteName, id), "")
+
+	return err
+}
+
 // HeaderLink contains the data for a response or request header link
 type HeaderLink struct {
 	ID        string
@@ -691,6 +871,13 @@ func (sc *Client) GetSiteMember(corpName, siteName, email string) (SiteMember, e
 	}
 
 	return s, nil
+}
+
+// DeleteSiteMember deletes a site member by email.
+func (sc *Client) DeleteSiteMember(corpName, siteName, email string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), "")
+
+	return err
 }
 
 // Agent contains the data for an agent
