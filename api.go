@@ -823,6 +823,13 @@ func (sc *Client) GetHeaderLink(corpName, siteName, id string) (HeaderLink, erro
 	return h, nil
 }
 
+// DeleteHeaderLink deletes a header link by id.
+func (sc *Client) DeleteHeaderLink(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/headerLinks/%s", corpName, siteName, id), "")
+
+	return err
+}
+
 // SiteMemberUser is the embedded user object in the site members response.
 type SiteMemberUser struct {
 	Name   string
