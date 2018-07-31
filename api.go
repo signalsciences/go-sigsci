@@ -169,6 +169,7 @@ func (sc *Client) GetCorp(corpName string) (Corp, error) {
 	return corp, nil
 }
 
+// UpdateCorp updates a corp by name.
 func (sc *Client) UpdateCorp(corpName string, query url.Values) (Corp, error) {
 	if query.Encode() == "" {
 		return Corp{}, errors.New("query parameters required")
@@ -189,6 +190,21 @@ func (sc *Client) UpdateCorp(corpName string, query url.Values) (Corp, error) {
 
 	return corp, nil
 }
+
+// Role is a corp or site role
+type Role string
+
+// All available Roles
+const (
+	RoleSiteNoAccess = Role("none")
+	RoleSiteUnknown  = Role("unknown")
+	RoleSiteOwner    = Role("owner")
+	RoleSiteAdmin    = Role("admin")
+	RoleSiteUser     = Role("user")
+	RoleSiteObserver = Role("observer")
+	RoleCorpOwner    = Role("corpOwner")
+	RoleCorpUser     = Role("corpUser")
+)
 
 // CorpUser contains details for a corp user.
 type CorpUser struct {
@@ -286,6 +302,8 @@ func (sc *Client) InviteUser(corpName, email string, invite CorpUserInvite) (Cor
 	return cu, nil
 }
 
+// GetOverviewReport gets the overview report data for a given corp.
+
 // ActivityEvent contains the data for activity page responses.
 type ActivityEvent struct {
 	ID          string
@@ -318,21 +336,6 @@ func (sc *Client) ListCorpActivity(corpName string, limit, page int) ([]Activity
 
 	return ar.Data, nil
 }
-
-// Role is a corp or site role
-type Role string
-
-// All available Roles
-const (
-	RoleSiteNoAccess = Role("none")
-	RoleSiteUnknown  = Role("unknown")
-	RoleSiteOwner    = Role("owner")
-	RoleSiteAdmin    = Role("admin")
-	RoleSiteUser     = Role("user")
-	RoleSiteObserver = Role("observer")
-	RoleCorpOwner    = Role("corpOwner")
-	RoleCorpUser     = Role("corpUser")
-)
 
 // Site contains details for a site.
 type Site struct {
@@ -397,6 +400,8 @@ func (sc *Client) GetSite(corpName, siteName string) (Site, error) {
 	return site, nil
 }
 
+// UpdateSite updates a site by name.
+
 // CustomAlert contains the data for a custom alert
 type CustomAlert struct {
 	ID        string
@@ -430,6 +435,8 @@ func (sc *Client) ListCustomAlerts(corpName, siteName string) ([]CustomAlert, er
 	return car.Data, nil
 }
 
+// CreateCustomAlert creates a custom alert.
+
 // GetCustomAlert gets a custom alert by ID
 func (sc *Client) GetCustomAlert(corpName, siteName, id string) (CustomAlert, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), "")
@@ -445,6 +452,8 @@ func (sc *Client) GetCustomAlert(corpName, siteName, id string) (CustomAlert, er
 
 	return ca, nil
 }
+
+// GetCustomAlert gets a custom alert by ID.
 
 // DeleteCustomAlert deletes a custom alert.
 func (sc *Client) DeleteCustomAlert(corpName, siteName, id string) error {
@@ -499,6 +508,8 @@ func (sc *Client) ListEvents(corpName, siteName string, query url.Values) ([]Eve
 
 // GetEvent gets an event by ID.
 
+// ExpireEvent expires an event by ID.
+
 // RequestTag is a tag in a request
 type RequestTag struct {
 	Type     string
@@ -528,6 +539,8 @@ type Request struct {
 	Tags              []RequestTag
 }
 
+// SearchRequests searches requests.
+
 // GetRequest gets a request by id.
 func (sc *Client) GetRequest(corpName, siteName, id string) (Request, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/requests/%s", corpName, siteName, id), "")
@@ -550,6 +563,8 @@ type requestsResponse struct {
 	Next       map[string]string
 	Data       []Request
 }
+
+// GetRequestFeed gets the request feed for the site.
 
 // ListIP is a whitelisted or blacklisted IP address.
 type ListIP struct {
@@ -582,6 +597,8 @@ func (sc *Client) ListWhitelistIPs(corpName, siteName string) ([]ListIP, error) 
 	return wr.Data, nil
 }
 
+// AddToWhitelist adds an IP address to the whitelist.
+
 // DeleteWhitelistIP deletes a whitelisted IP by id.
 func (sc *Client) DeleteWhitelistIP(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/whitelist/%s", corpName, siteName, id), "")
@@ -609,6 +626,8 @@ func (sc *Client) ListBlacklistIPs(corpName, siteName string) ([]ListIP, error) 
 
 	return br.Data, nil
 }
+
+// AddToBlacklist adds an IP address to the blacklist.
 
 // DeleteBlacklistIP deletes a blacklisted IP by id.
 func (sc *Client) DeleteBlacklistIP(corpName, siteName, id string) error {
@@ -646,6 +665,8 @@ func (sc *Client) ListRedactions(corpName, siteName string) ([]Redaction, error)
 
 	return rr.Data, nil
 }
+
+// AddRedaction adds a redaction.
 
 // GetRedaction gets a redaction by id.
 func (sc *Client) GetRedaction(corpName, siteName, id string) (Redaction, error) {
@@ -704,6 +725,8 @@ func (sc *Client) ListIntegrations(corpName, siteName string) ([]Integration, er
 	return ir.Data, nil
 }
 
+// AddIntegrations adds an integration.
+
 // GetIntegration gets an integration by id.
 func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/integrations/%s", corpName, siteName, id), "")
@@ -719,6 +742,8 @@ func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, er
 
 	return i, nil
 }
+
+// UpdateIntegration updates an integration by ID.
 
 // DeleteIntegration deletes a redaction by id.
 func (sc *Client) DeleteIntegration(corpName, siteName, id string) error {
@@ -757,6 +782,8 @@ func (sc *Client) ListParams(corpName, siteName string) ([]Param, error) {
 
 	return pr.Data, nil
 }
+
+// AddParam adds a whitelisted parameter.
 
 // GetParam gets a whitelisted param by id.
 func (sc *Client) GetParam(corpName, siteName, id string) (Param, error) {
@@ -810,6 +837,8 @@ func (sc *Client) ListPaths(corpName, siteName string) ([]Path, error) {
 
 	return pr.Data, nil
 }
+
+// AddPath adds a whitelisted path.
 
 // GetPath gets a whitelisted path by id.
 func (sc *Client) GetPath(corpName, siteName, id string) (Path, error) {
@@ -881,6 +910,8 @@ func (sc *Client) ListHeaderLinks(corpName, siteName string) ([]HeaderLink, erro
 
 	return hr.Data, nil
 }
+
+// AddHeaderLink adds a header link.
 
 // GetHeaderLink gets a header link by id.
 func (sc *Client) GetHeaderLink(corpName, siteName, id string) (HeaderLink, error) {
@@ -974,12 +1005,21 @@ func (sc *Client) GetSiteMember(corpName, siteName, email string) (SiteMember, e
 	return s, nil
 }
 
+// UpdateSiteMember updates a site member by email.
+
 // DeleteSiteMember deletes a site member by email.
 func (sc *Client) DeleteSiteMember(corpName, siteName, email string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), "")
 
 	return err
 }
+
+// InviteSiteMember invites a site member by email.
+
+// GetSiteMonitor gets the site monitor URL.
+// GenerateSiteMonitor generates a site monitor URL.
+// EnableSiteMonitor enables the site monitor URL for a given site.
+// DisableSiteMonitor disables the site monitor URL for a given site.
 
 // Agent contains the data for an agent
 type Agent struct {
@@ -1171,3 +1211,7 @@ func (sc *Client) ListTopAttacks(corpName, siteName string, query url.Values) ([
 
 	return tr.Data, nil
 }
+
+// GetTimeseries gets timeseries request info.
+
+// GetHealthReport gets the health report for a given corp by name.
