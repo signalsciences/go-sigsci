@@ -137,6 +137,59 @@ type corpsResponse struct {
 	Data []Corp
 }
 
+// ListCorps lists corps.
+func (sc *Client) ListCorps() ([]Corp, error) {
+	resp, err := sc.doRequest("GET", "/v0/corps", "")
+	if err != nil {
+		return []Corp{}, err
+	}
+
+	var cr corpsResponse
+	err = json.Unmarshal(resp, &cr)
+	if err != nil {
+		return []Corp{}, err
+	}
+
+	return cr.Data, nil
+}
+
+// GetCorp gets a corp by name.
+func (sc *Client) GetCorp(corpName string) (Corp, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s", corpName), "")
+	if err != nil {
+		return Corp{}, err
+	}
+
+	var corp Corp
+	err = json.Unmarshal(resp, &corp)
+	if err != nil {
+		return Corp{}, err
+	}
+
+	return corp, nil
+}
+
+func (sc *Client) UpdateCorp(corpName string, query url.Values) (Corp, error) {
+	if query.Encode() == "" {
+		return Corp{}, errors.New("query parameters required")
+	}
+
+	url := fmt.Sprintf("/v0/corps/%s/sites/%s/events?%s", corpName, query.Encode())
+
+	resp, err := sc.doRequest("PATCH", url, "")
+	if err != nil {
+		return Corp{}, err
+	}
+
+	var corp Corp
+	err = json.Unmarshal(resp, &corp)
+	if err != nil {
+		return Corp{}, err
+	}
+
+	return corp, nil
+}
+
 // CorpUser contains details for a corp user.
 type CorpUser struct {
 	Name        string
@@ -152,6 +205,118 @@ type CorpUser struct {
 // corpUsersResponse is the response for list corp users
 type corpUsersResponse struct {
 	Data []CorpUser
+}
+
+// ListCorpUsers lists corp users.
+func (sc *Client) ListCorpUsers(corpName string) ([]CorpUser, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/users", corpName), "")
+	if err != nil {
+		return []CorpUser{}, err
+	}
+
+	var cur corpUsersResponse
+	err = json.Unmarshal(resp, &cur)
+	if err != nil {
+		return []CorpUser{}, err
+	}
+
+	return cur.Data, nil
+}
+
+// GetCorpUser gets a corp user by email.
+func (sc *Client) GetCorpUser(corpName, email string) (CorpUser, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/users/%s", corpName, email), "")
+	if err != nil {
+		return CorpUser{}, err
+	}
+
+	var cu CorpUser
+	err = json.Unmarshal(resp, &cu)
+	if err != nil {
+		return CorpUser{}, err
+	}
+
+	return cu, nil
+}
+
+// DeleteCorpUser deletes a user from the given corp.
+func (sc *Client) DeleteCorpUser(corpName, email string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/users/%s", corpName, email), "")
+
+	return err
+}
+
+type inviteMemberships struct {
+	Data []SiteMembership `json:"data"`
+}
+
+// CorpUserInvite is the request struct for inviting a user to a corp.
+type CorpUserInvite struct {
+	Role        Role              `json:"role"`
+	Memberships inviteMemberships `json:"memberships"`
+}
+
+// NewCorpUserInvite creates a new invitation struct for inviting a user to a corp.
+func NewCorpUserInvite(corpRole Role, memberships []SiteMembership) CorpUserInvite {
+	return CorpUserInvite{
+		Role: corpRole,
+		Memberships: inviteMemberships{
+			Data: memberships,
+		},
+	}
+}
+
+// InviteUser invites a user by email to a corp.
+func (sc *Client) InviteUser(corpName, email string, invite CorpUserInvite) (CorpUser, error) {
+	body, err := json.Marshal(invite)
+	if err != nil {
+		return CorpUser{}, err
+	}
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/users/%s/invite", corpName, email), string(body))
+	if err != nil {
+		return CorpUser{}, err
+	}
+
+	var cu CorpUser
+	err = json.Unmarshal(resp, &cu)
+	if err != nil {
+		return CorpUser{}, err
+	}
+
+	return cu, nil
+}
+
+// ActivityEvent contains the data for activity page responses.
+type ActivityEvent struct {
+	ID          string
+	EventType   string
+	MsgData     map[string]string
+	Message     string
+	Attachments []struct{}
+	Created     time.Time
+}
+
+// activityResponse is the response for the activity events endpoints.
+type activityResponse struct {
+	TotalCount int
+	Next       map[string]string
+	Data       []ActivityEvent
+}
+
+// ListCorpActivity lists activity events for a given corp.
+func (sc *Client) ListCorpActivity(corpName string, limit, page int) ([]ActivityEvent, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/activity?limit=%d&page=%d", corpName, limit, page), "")
+	if err != nil {
+		return []ActivityEvent{}, err
+	}
+
+	var ar activityResponse
+	err = json.Unmarshal(resp, &ar)
+	if err != nil {
+		return []ActivityEvent{}, err
+	}
+
+	return ar.Data, nil
 }
 
 // Role is a corp or site role
@@ -232,158 +397,6 @@ func (sc *Client) GetSite(corpName, siteName string) (Site, error) {
 	return site, nil
 }
 
-// Event is a request event.
-type Event struct {
-	ID                string
-	Timestamp         time.Time
-	Source            string
-	RemoteCountryCode string
-	RemoteHostname    string
-	UserAgents        []string
-	Action            string
-	Type              string
-	Reasons           map[string]int
-	RequestCount      int
-	TagCount          int
-	Window            int
-	Expires           time.Time
-	ExpiredBy         string
-}
-
-type eventsResponse struct {
-	TotalCount int
-	Next       map[string]string
-	Data       []Event
-}
-
-// ListEvents lists events for a given site.
-func (sc *Client) ListEvents(corpName, siteName string, query url.Values) ([]Event, error) {
-	url := fmt.Sprintf("/v0/corps/%s/sites/%s/events", corpName, siteName)
-	if query.Encode() != "" {
-		url += "?" + query.Encode()
-	}
-	resp, err := sc.doRequest("GET", url, "")
-	if err != nil {
-		return []Event{}, err
-	}
-
-	var er eventsResponse
-	err = json.Unmarshal(resp, &er)
-	if err != nil {
-		return []Event{}, err
-	}
-
-	return er.Data, nil
-}
-
-type inviteMemberships struct {
-	Data []SiteMembership `json:"data"`
-}
-
-// CorpUserInvite is the request struct for inviting a user to a corp.
-type CorpUserInvite struct {
-	Role        Role              `json:"role"`
-	Memberships inviteMemberships `json:"memberships"`
-}
-
-// NewCorpUserInvite creates a new invitation struct for inviting a user to a corp.
-func NewCorpUserInvite(corpRole Role, memberships []SiteMembership) CorpUserInvite {
-	return CorpUserInvite{
-		Role: corpRole,
-		Memberships: inviteMemberships{
-			Data: memberships,
-		},
-	}
-}
-
-// InviteUser invites a user by email to a corp.
-func (sc *Client) InviteUser(corpName, email string, invite CorpUserInvite) (CorpUser, error) {
-	body, err := json.Marshal(invite)
-	if err != nil {
-		return CorpUser{}, err
-	}
-	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/users/%s/invite", corpName, email), string(body))
-	if err != nil {
-		return CorpUser{}, err
-	}
-
-	var cu CorpUser
-	err = json.Unmarshal(resp, &cu)
-	if err != nil {
-		return CorpUser{}, err
-	}
-
-	return cu, nil
-}
-
-type site struct {
-	Name string `json:"name"`
-}
-
-// SiteMembership contains the data needed for inviting a user to a site.
-type SiteMembership struct {
-	Site site `json:"site"`
-	Role Role `json:"role"`
-}
-
-// NewSiteMembership returns a new site membership object for the given
-// site name and role.
-func NewSiteMembership(name string, role Role) SiteMembership {
-	return SiteMembership{
-		Site: site{Name: name},
-		Role: role,
-	}
-}
-
-// ActivityEvent contains the data for activity page responses.
-type ActivityEvent struct {
-	ID          string
-	EventType   string
-	MsgData     map[string]string
-	Message     string
-	Attachments []struct{}
-	Created     time.Time
-}
-
-// activityResponse is the response for the activity events endpoints.
-type activityResponse struct {
-	TotalCount int
-	Next       map[string]string
-	Data       []ActivityEvent
-}
-
-// ListCorpActivity lists activity events for a given corp.
-func (sc *Client) ListCorpActivity(corpName string, limit, page int) ([]ActivityEvent, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/activity?limit=%d&page=%d", corpName, limit, page), "")
-	if err != nil {
-		return []ActivityEvent{}, err
-	}
-
-	var ar activityResponse
-	err = json.Unmarshal(resp, &ar)
-	if err != nil {
-		return []ActivityEvent{}, err
-	}
-
-	return ar.Data, nil
-}
-
-// ListSiteActivity lists activity events for a given site.
-func (sc *Client) ListSiteActivity(corpName, siteName string, limit, page int) ([]ActivityEvent, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/activity?limit=%d&page=%d", corpName, siteName, limit, page), "")
-	if err != nil {
-		return []ActivityEvent{}, err
-	}
-
-	var ar activityResponse
-	err = json.Unmarshal(resp, &ar)
-	if err != nil {
-		return []ActivityEvent{}, err
-	}
-
-	return ar.Data, nil
-}
-
 // CustomAlert contains the data for a custom alert
 type CustomAlert struct {
 	ID        string
@@ -439,6 +452,52 @@ func (sc *Client) DeleteCustomAlert(corpName, siteName, id string) error {
 
 	return err
 }
+
+// Event is a request event.
+type Event struct {
+	ID                string
+	Timestamp         time.Time
+	Source            string
+	RemoteCountryCode string
+	RemoteHostname    string
+	UserAgents        []string
+	Action            string
+	Type              string
+	Reasons           map[string]int
+	RequestCount      int
+	TagCount          int
+	Window            int
+	Expires           time.Time
+	ExpiredBy         string
+}
+
+type eventsResponse struct {
+	TotalCount int
+	Next       map[string]string
+	Data       []Event
+}
+
+// ListEvents lists events for a given site.
+func (sc *Client) ListEvents(corpName, siteName string, query url.Values) ([]Event, error) {
+	url := fmt.Sprintf("/v0/corps/%s/sites/%s/events", corpName, siteName)
+	if query.Encode() != "" {
+		url += "?" + query.Encode()
+	}
+	resp, err := sc.doRequest("GET", url, "")
+	if err != nil {
+		return []Event{}, err
+	}
+
+	var er eventsResponse
+	err = json.Unmarshal(resp, &er)
+	if err != nil {
+		return []Event{}, err
+	}
+
+	return er.Data, nil
+}
+
+// GetEvent gets an event by ID.
 
 // RequestTag is a tag in a request
 type RequestTag struct {
@@ -775,6 +834,22 @@ func (sc *Client) DeletePath(corpName, siteName, id string) error {
 	return err
 }
 
+// ListSiteActivity lists activity events for a given site.
+func (sc *Client) ListSiteActivity(corpName, siteName string, limit, page int) ([]ActivityEvent, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/activity?limit=%d&page=%d", corpName, siteName, limit, page), "")
+	if err != nil {
+		return []ActivityEvent{}, err
+	}
+
+	var ar activityResponse
+	err = json.Unmarshal(resp, &ar)
+	if err != nil {
+		return []ActivityEvent{}, err
+	}
+
+	return ar.Data, nil
+}
+
 // HeaderLink contains the data for a response or request header link
 type HeaderLink struct {
 	ID        string
@@ -828,6 +903,25 @@ func (sc *Client) DeleteHeaderLink(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/headerLinks/%s", corpName, siteName, id), "")
 
 	return err
+}
+
+type site struct {
+	Name string `json:"name"`
+}
+
+// SiteMembership contains the data needed for inviting a member to a site.
+type SiteMembership struct {
+	Site site `json:"site"`
+	Role Role `json:"role"`
+}
+
+// NewSiteMembership returns a new site membership object for the given
+// site name and role.
+func NewSiteMembership(name string, role Role) SiteMembership {
+	return SiteMembership{
+		Site: site{Name: name},
+		Role: role,
+	}
 }
 
 // SiteMemberUser is the embedded user object in the site members response.
@@ -1076,75 +1170,4 @@ func (sc *Client) ListTopAttacks(corpName, siteName string, query url.Values) ([
 	}
 
 	return tr.Data, nil
-}
-
-// ListCorps lists corps.
-func (sc *Client) ListCorps() ([]Corp, error) {
-	resp, err := sc.doRequest("GET", "/v0/corps", "")
-	if err != nil {
-		return []Corp{}, err
-	}
-
-	var cr corpsResponse
-	err = json.Unmarshal(resp, &cr)
-	if err != nil {
-		return []Corp{}, err
-	}
-
-	return cr.Data, nil
-}
-
-// GetCorp gets a corp by name.
-func (sc *Client) GetCorp(corpName string) (Corp, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s", corpName), "")
-	if err != nil {
-		return Corp{}, err
-	}
-
-	var corp Corp
-	err = json.Unmarshal(resp, &corp)
-	if err != nil {
-		return Corp{}, err
-	}
-
-	return corp, nil
-}
-
-// ListCorpUsers lists corp users.
-func (sc *Client) ListCorpUsers(corpName string) ([]CorpUser, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/users", corpName), "")
-	if err != nil {
-		return []CorpUser{}, err
-	}
-
-	var cur corpUsersResponse
-	err = json.Unmarshal(resp, &cur)
-	if err != nil {
-		return []CorpUser{}, err
-	}
-
-	return cur.Data, nil
-}
-
-// GetCorpUser gets a corp user by email.
-func (sc *Client) GetCorpUser(corpName, email string) (CorpUser, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/users/%s", corpName, email), "")
-	if err != nil {
-		return CorpUser{}, err
-	}
-
-	var cu CorpUser
-	err = json.Unmarshal(resp, &cu)
-	if err != nil {
-		return CorpUser{}, err
-	}
-
-	return cu, nil
-}
-
-// DeleteCorpUser deletes a user from the given corp.
-func (sc *Client) DeleteCorpUser(corpName, email string) error {
-	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/users/%s", corpName, email), "")
-
-	return err
 }
