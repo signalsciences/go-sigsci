@@ -169,15 +169,21 @@ func (sc *Client) GetCorp(corpName string) (Corp, error) {
 	return corp, nil
 }
 
+// UpdateCorpBody is the body for the UpdateCorp method.
+type UpdateCorpBody struct {
+	DisplayName            string `json:"displayName,omitempty"`
+	SmallIconURI           string `json:"smallIconURI,omitempty"`
+	SessionMaxAgeDashboard int    `json:"sessionMaxAgeDashboard,omitempty"`
+}
+
 // UpdateCorp updates a corp by name.
-func (sc *Client) UpdateCorp(corpName string, query url.Values) (Corp, error) {
-	if query.Encode() == "" {
-		return Corp{}, errors.New("query parameters required")
+func (sc *Client) UpdateCorp(corpName string, body UpdateCorpBody) (Corp, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return Corp{}, err
 	}
 
-	url := fmt.Sprintf("/v0/corps/%s/sites/%s/events?%s", corpName, query.Encode())
-
-	resp, err := sc.doRequest("PATCH", url, "")
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s", corpName), string(b))
 	if err != nil {
 		return Corp{}, err
 	}
@@ -288,6 +294,7 @@ func (sc *Client) InviteUser(corpName, email string, invite CorpUserInvite) (Cor
 	if err != nil {
 		return CorpUser{}, err
 	}
+
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/users/%s/invite", corpName, email), string(body))
 	if err != nil {
 		return CorpUser{}, err
