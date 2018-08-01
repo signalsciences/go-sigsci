@@ -760,8 +760,8 @@ func (b ListIPBody) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// AddToWhitelist adds an IP address to the whitelist.
-func (sc *Client) AddToWhitelist(corpName, siteName string, body ListIPBody) (ListIP, error) {
+// AddWhitelistIP adds an IP address to the whitelist.
+func (sc *Client) AddWhitelistIP(corpName, siteName string, body ListIPBody) (ListIP, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
 		return ListIP{}, err
@@ -809,8 +809,8 @@ func (sc *Client) ListBlacklistIPs(corpName, siteName string) ([]ListIP, error) 
 	return br.Data, nil
 }
 
-// AddToBlacklist adds an IP address to the blacklist.
-func (sc *Client) AddToBlacklist(corpName, siteName string, body ListIPBody) (ListIP, error) {
+// AddBlacklistIP adds an IP address to the blacklist.
+func (sc *Client) AddBlacklistIP(corpName, siteName string, body ListIPBody) (ListIP, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
 		return ListIP{}, err
