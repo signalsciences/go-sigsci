@@ -743,6 +743,8 @@ type ListIPBody struct {
 	Expires time.Time `json:"expires,omitempty"`
 }
 
+// MarshalJSON is a custom JSON marshal method for ListIPBody
+// so that Expires can be formatted as RFC3339
 func (b ListIPBody) MarshalJSON() ([]byte, error) {
 	var expires string
 	if (b.Expires != time.Time{}) {
