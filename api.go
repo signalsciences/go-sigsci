@@ -309,7 +309,56 @@ func (sc *Client) InviteUser(corpName, email string, invite CorpUserInvite) (Cor
 	return cu, nil
 }
 
+type topAttackType struct {
+	TagName    string
+	TagCount   int
+	TotalCount int
+}
+
+type topAttackSource struct {
+	CountryCode  string
+	CountryName  string
+	RequestCount int
+	TotalCount   int
+}
+
+// OverviewSite is a site in the overview report.
+type OverviewSite struct {
+	Name             string
+	DisplayName      string
+	TotalCount       int
+	BlockedCount     int
+	FlaggedCount     int
+	AttackCount      int
+	FlaggedIPCount   int
+	TopAttackTypes   []topAttackType
+	TopAttackSources []topAttackSource
+}
+
+// overviewResponse contains the overview report data.
+type overviewResponse struct {
+	Data []OverviewSite
+}
+
 // GetOverviewReport gets the overview report data for a given corp.
+func (sc *Client) GetOverviewReport(corpName string, query url.Values) ([]OverviewSite, error) {
+	url := fmt.Sprintf("/v0/corps/%s/reports/attacks", corpName)
+	if query.Encode() != "" {
+		url += "?" + query.Encode()
+	}
+	resp, err := sc.doRequest("GET", url, "")
+	if err != nil {
+		return []OverviewSite{}, err
+	}
+
+	var or overviewResponse
+	err = json.Unmarshal(resp, &or)
+	if err != nil {
+		return []OverviewSite{}, err
+	}
+
+	return or.Data, nil
+}
 
 // ActivityEvent contains the data for activity page responses.
 type ActivityEvent struct {
@@ -407,7 +456,33 @@ func (sc *Client) GetSite(corpName, siteName string) (Site, error) {
 	return site, nil
 }
 
+// UpdateSiteBody is the body for the update site method.
+type UpdateSiteBody struct {
+	DisplayName          string `json:"displayName,omitempty"`
+	AgentLevel           string `json:"agentLevel,omitempty"`
+	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
+}
+
 // UpdateSite updates a site by name.
+func (sc *Client) UpdateSite(corpName, siteName string, body UpdateSiteBody) (Site, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return Site{}, err
+	}
+
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s", corpName, siteName), string(b))
+	if err != nil {
+		return Site{}, err
+	}
+
+	var site Site
+	err = json.Unmarshal(resp, &site)
+	if err != nil {
+		return Site{}, err
+	}
+
+	return site, nil
+}
 
 // CustomAlert contains the data for a custom alert
 type CustomAlert struct {
@@ -442,7 +517,36 @@ func (sc *Client) ListCustomAlerts(corpName, siteName string) ([]CustomAlert, er
 	return car.Data, nil
 }
 
+// CustomAlertBody is the body for creating a custom alert.
+type CustomAlertBody struct {
+	TagName   string `json:"tagName"`
+	LongName  string `json:"longName"`
+	Interval  int    `json:"interval"`
+	Threshold int    `json:"threshold"`
+	Enabled   bool   `json:"enabled"`
+	Action    string `json:"action"`
+}
+
 // CreateCustomAlert creates a custom alert.
+func (sc *Client) CreateCustomAlert(corpName, siteName string, body CustomAlertBody) (CustomAlert, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), string(b))
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	var c CustomAlert
+	err = json.Unmarshal(resp, &c)
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	return c, nil
+}
 
 // GetCustomAlert gets a custom alert by ID
 func (sc *Client) GetCustomAlert(corpName, siteName, id string) (CustomAlert, error) {
@@ -514,8 +618,36 @@ func (sc *Client) ListEvents(corpName, siteName string, query url.Values) ([]Eve
 }
 
 // GetEvent gets an event by ID.
+func (sc *Client) GetEvent(corpName, siteName, id string) (Event, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/events/%s", corpName, siteName, id), "")
+	if err != nil {
+		return Event{}, err
+	}
+
+	var e Event
+	err = json.Unmarshal(resp, &e)
+	if err != nil {
+		return Event{}, err
+	}
+
+	return e, nil
+}
 
 // ExpireEvent expires an event by ID.
+func (sc *Client) ExpireEvent(corpName, siteName, id string) (Event, error) {
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/events/%s/expire", corpName, siteName, id), "")
+	if err != nil {
+		return Event{}, err
+	}
+
+	var e Event
+	err = json.Unmarshal(resp, &e)
+	if err != nil {
+		return Event{}, err
+	}
+
+	return e, nil
+}
 
 // RequestTag is a tag in a request
 type RequestTag struct {
@@ -577,7 +709,7 @@ type requestsResponse struct {
 type ListIP struct {
 	ID        string
 	Source    string
-	Expires   time.Time
+	Expires   time.Time `json:"omitempty"`
 	Note      string
 	CreatedBy string
 	Created   time.Time
@@ -604,7 +736,50 @@ func (sc *Client) ListWhitelistIPs(corpName, siteName string) ([]ListIP, error) 
 	return wr.Data, nil
 }
 
+// ListIPBody is the body for adding an IP to the whitelist or blacklist.
+type ListIPBody struct {
+	Source  string    `json:"source"`
+	Note    string    `json:"note"`
+	Expires time.Time `json:"expires,omitempty"`
+}
+
+func (b ListIPBody) MarshalJSON() ([]byte, error) {
+	var expires string
+	if (b.Expires != time.Time{}) {
+		expires = b.Expires.Format(time.RFC3339)
+	}
+
+	return json.Marshal(struct {
+		Source  string `json:"source"`
+		Note    string `json:"note"`
+		Expires string `json:"expires,omitempty"`
+	}{
+		Source:  b.Source,
+		Note:    b.Note,
+		Expires: expires,
+	})
+}
+
 // AddToWhitelist adds an IP address to the whitelist.
+func (sc *Client) AddToWhitelist(corpName, siteName string, body ListIPBody) (ListIP, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ListIP{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/whitelist", corpName, siteName), string(b))
+	if err != nil {
+		return ListIP{}, err
+	}
+
+	var ip ListIP
+	err = json.Unmarshal(resp, &ip)
+	if err != nil {
+		return ListIP{}, err
+	}
+
+	return ip, nil
+}
 
 // DeleteWhitelistIP deletes a whitelisted IP by id.
 func (sc *Client) DeleteWhitelistIP(corpName, siteName, id string) error {
@@ -635,6 +810,25 @@ func (sc *Client) ListBlacklistIPs(corpName, siteName string) ([]ListIP, error) 
 }
 
 // AddToBlacklist adds an IP address to the blacklist.
+func (sc *Client) AddToBlacklist(corpName, siteName string, body ListIPBody) (ListIP, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ListIP{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/blacklist", corpName, siteName), string(b))
+	if err != nil {
+		return ListIP{}, err
+	}
+
+	var ip ListIP
+	err = json.Unmarshal(resp, &ip)
+	if err != nil {
+		return ListIP{}, err
+	}
+
+	return ip, nil
+}
 
 // DeleteBlacklistIP deletes a blacklisted IP by id.
 func (sc *Client) DeleteBlacklistIP(corpName, siteName, id string) error {
@@ -673,7 +867,33 @@ func (sc *Client) ListRedactions(corpName, siteName string) ([]Redaction, error)
 	return rr.Data, nil
 }
 
+// RedactionBody is the body for adding a redaction.
+// Type of redaction (0: Request Parameter, 1: Request Header, 2: Response Header)
+type RedactionBody struct {
+	Field         string `json:"field"`
+	RedactionType int    `json:"redactionType"`
+}
+
 // AddRedaction adds a redaction.
+func (sc *Client) AddRedaction(corpName, siteName string, body RedactionBody) ([]Redaction, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return []Redaction{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions", corpName, siteName), string(b))
+	if err != nil {
+		return []Redaction{}, err
+	}
+
+	var r redactionsResponse
+	err = json.Unmarshal(resp, &r)
+	if err != nil {
+		return []Redaction{}, err
+	}
+
+	return r.Data, nil
+}
 
 // GetRedaction gets a redaction by id.
 func (sc *Client) GetRedaction(corpName, siteName, id string) (Redaction, error) {
@@ -732,7 +952,7 @@ func (sc *Client) ListIntegrations(corpName, siteName string) ([]Integration, er
 	return ir.Data, nil
 }
 
-// AddIntegrations adds an integration.
+// AddIntegration adds an integration.
 
 // GetIntegration gets an integration by id.
 func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, error) {
