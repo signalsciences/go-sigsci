@@ -98,7 +98,7 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 			return body, errMsg(body)
 		}
 	case "PATCH":
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			return body, errMsg(body)
 		}
 	}
@@ -954,7 +954,33 @@ func (sc *Client) ListIntegrations(corpName, siteName string) ([]Integration, er
 	return ir.Data, nil
 }
 
+// IntegrationBody is the body for adding an integration.
+type IntegrationBody struct {
+	URL    string   `json:"url"`
+	Type   string   `json:"type"`
+	Events []string `json:"events"`
+}
+
 // AddIntegration adds an integration.
+func (sc *Client) AddIntegration(corpName, siteName string, body IntegrationBody) ([]Integration, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return []Integration{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/integrations", corpName, siteName), string(b))
+	if err != nil {
+		return []Integration{}, err
+	}
+
+	var ir integrationsResponse
+	err = json.Unmarshal(resp, &ir)
+	if err != nil {
+		return []Integration{}, err
+	}
+
+	return ir.Data, nil
+}
 
 // GetIntegration gets an integration by id.
 func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, error) {
@@ -972,7 +998,22 @@ func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, er
 	return i, nil
 }
 
-// UpdateIntegration updates an integration by ID.
+// UpdateIntegrationBody is the body for updating an integration.
+type UpdateIntegrationBody struct {
+	URL    string   `json:"url,omitempty"`
+	Events []string `json:"smallIconURI,omitempty"`
+}
+
+// UpdateIntegration updates an integration by id.
+func (sc *Client) UpdateIntegration(corpName, siteName, id string, body UpdateIntegrationBody) error {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	_, err = sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/integrations/%s", corpName, siteName, id), string(b))
+	return err
+}
 
 // DeleteIntegration deletes a redaction by id.
 func (sc *Client) DeleteIntegration(corpName, siteName, id string) error {
@@ -1012,7 +1053,33 @@ func (sc *Client) ListParams(corpName, siteName string) ([]Param, error) {
 	return pr.Data, nil
 }
 
+// ParamBody is the body for adding a whitelisted parameter.
+type ParamBody struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Note string `json:"note"`
+}
+
 // AddParam adds a whitelisted parameter.
+func (sc *Client) AddParam(corpName, siteName string, body ParamBody) ([]Param, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return []Param{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist", corpName, siteName), string(b))
+	if err != nil {
+		return []Param{}, err
+	}
+
+	var pr paramsResponse
+	err = json.Unmarshal(resp, &pr)
+	if err != nil {
+		return []Param{}, err
+	}
+
+	return pr.Data, nil
+}
 
 // GetParam gets a whitelisted param by id.
 func (sc *Client) GetParam(corpName, siteName, id string) (Param, error) {
@@ -1067,7 +1134,32 @@ func (sc *Client) ListPaths(corpName, siteName string) ([]Path, error) {
 	return pr.Data, nil
 }
 
+// PathBody is the body for creating a whitelisted path.
+type PathBody struct {
+	Path string `json:"path"`
+	Note string `json:"note"`
+}
+
 // AddPath adds a whitelisted path.
+func (sc *Client) AddPath(corpName, siteName string, body PathBody) ([]Path, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return []Path{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist", corpName, siteName), string(b))
+	if err != nil {
+		return []Path{}, err
+	}
+
+	var pr pathsResponse
+	err = json.Unmarshal(resp, &pr)
+	if err != nil {
+		return []Path{}, err
+	}
+
+	return pr.Data, nil
+}
 
 // GetPath gets a whitelisted path by id.
 func (sc *Client) GetPath(corpName, siteName, id string) (Path, error) {
@@ -1140,7 +1232,34 @@ func (sc *Client) ListHeaderLinks(corpName, siteName string) ([]HeaderLink, erro
 	return hr.Data, nil
 }
 
+// HeaderLinkBody is the body for creating a header link.
+type HeaderLinkBody struct {
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	LinkName string `json:"linkName"`
+	Link     string `json:"link"`
+}
+
 // AddHeaderLink adds a header link.
+func (sc *Client) AddHeaderLink(corpName, siteName string, body HeaderLinkBody) ([]HeaderLink, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return []HeaderLink{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist", corpName, siteName), string(b))
+	if err != nil {
+		return []HeaderLink{}, err
+	}
+
+	var hr headerLinksResponse
+	err = json.Unmarshal(resp, &hr)
+	if err != nil {
+		return []HeaderLink{}, err
+	}
+
+	return hr.Data, nil
+}
 
 // GetHeaderLink gets a header link by id.
 func (sc *Client) GetHeaderLink(corpName, siteName, id string) (HeaderLink, error) {
@@ -1234,7 +1353,37 @@ func (sc *Client) GetSiteMember(corpName, siteName, email string) (SiteMember, e
 	return s, nil
 }
 
+// SiteMemberBody is the body for updating or inviting a site member.
+type SiteMemberBody struct {
+	Role Role `json:"role"`
+}
+
+type siteMemberResponse struct {
+	Email  string
+	Role   Role
+	Status string
+}
+
 // UpdateSiteMember updates a site member by email.
+func (sc *Client) UpdateSiteMember(corpName, siteName, email string, body SiteMemberBody) (siteMemberResponse, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return siteMemberResponse{}, err
+	}
+
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), string(b))
+	if err != nil {
+		return siteMemberResponse{}, err
+	}
+
+	var sm siteMemberResponse
+	err = json.Unmarshal(resp, &sm)
+	if err != nil {
+		return siteMemberResponse{}, err
+	}
+
+	return sm, nil
+}
 
 // DeleteSiteMember deletes a site member by email.
 func (sc *Client) DeleteSiteMember(corpName, siteName, email string) error {
@@ -1244,11 +1393,80 @@ func (sc *Client) DeleteSiteMember(corpName, siteName, email string) error {
 }
 
 // InviteSiteMember invites a site member by email.
+func (sc *Client) InviteSiteMember(corpName, siteName, email string, body SiteMemberBody) (siteMemberResponse, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return siteMemberResponse{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s/invite", corpName, siteName, email), string(b))
+	if err != nil {
+		return siteMemberResponse{}, err
+	}
+
+	var sm siteMemberResponse
+	err = json.Unmarshal(resp, &sm)
+	if err != nil {
+		return siteMemberResponse{}, err
+	}
+
+	return sm, nil
+}
+
+// SiteMonitor is a monitor URL for a site.
+type SiteMonitor struct {
+	ID        string
+	URL       string
+	Share     bool
+	CreatedBy string
+	Created   time.Time
+}
 
 // GetSiteMonitor gets the site monitor URL.
+func (sc *Client) GetSiteMonitor(corpName, siteName, email string) (SiteMonitor, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/monitors", corpName, siteName), "")
+	if err != nil {
+		return SiteMonitor{}, err
+	}
+
+	var s SiteMonitor
+	err = json.Unmarshal(resp, &s)
+	if err != nil {
+		return SiteMonitor{}, err
+	}
+
+	return s, nil
+}
+
 // GenerateSiteMonitor generates a site monitor URL.
+func (sc *Client) GenerateSiteMonitor(corpName, siteName string) (SiteMonitor, error) {
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/monitors", corpName, siteName), "")
+	if err != nil {
+		return SiteMonitor{}, err
+	}
+
+	var s SiteMonitor
+	err = json.Unmarshal(resp, &s)
+	if err != nil {
+		return SiteMonitor{}, err
+	}
+
+	return s, nil
+}
+
 // EnableSiteMonitor enables the site monitor URL for a given site.
+func (sc *Client) EnableSiteMonitor(corpName, siteName string) error {
+	_, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/monitors/enable", corpName, siteName), "")
+
+	return err
+}
+
 // DisableSiteMonitor disables the site monitor URL for a given site.
+func (sc *Client) DisableSiteMonitor(corpName, siteName string) error {
+	_, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/monitors/disable", corpName, siteName), "")
+
+	return err
+}
 
 // Agent contains the data for an agent
 type Agent struct {
