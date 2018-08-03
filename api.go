@@ -1446,28 +1446,29 @@ type SiteMemberBody struct {
 	Role Role `json:"role"`
 }
 
-type siteMemberResponse struct {
+// SiteMemberResponse is the response for updating or inviting a site member.
+type SiteMemberResponse struct {
 	Email  string
 	Role   Role
 	Status string
 }
 
 // UpdateSiteMember updates a site member by email.
-func (sc *Client) UpdateSiteMember(corpName, siteName, email string, body SiteMemberBody) (siteMemberResponse, error) {
+func (sc *Client) UpdateSiteMember(corpName, siteName, email string, body SiteMemberBody) (SiteMemberResponse, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return siteMemberResponse{}, err
+		return SiteMemberResponse{}, err
 	}
 
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), string(b))
 	if err != nil {
-		return siteMemberResponse{}, err
+		return SiteMemberResponse{}, err
 	}
 
-	var sm siteMemberResponse
+	var sm SiteMemberResponse
 	err = json.Unmarshal(resp, &sm)
 	if err != nil {
-		return siteMemberResponse{}, err
+		return SiteMemberResponse{}, err
 	}
 
 	return sm, nil
@@ -1481,21 +1482,21 @@ func (sc *Client) DeleteSiteMember(corpName, siteName, email string) error {
 }
 
 // InviteSiteMember invites a site member by email.
-func (sc *Client) InviteSiteMember(corpName, siteName, email string, body SiteMemberBody) (siteMemberResponse, error) {
+func (sc *Client) InviteSiteMember(corpName, siteName, email string, body SiteMemberBody) (SiteMemberResponse, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return siteMemberResponse{}, err
+		return SiteMemberResponse{}, err
 	}
 
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s/invite", corpName, siteName, email), string(b))
 	if err != nil {
-		return siteMemberResponse{}, err
+		return SiteMemberResponse{}, err
 	}
 
-	var sm siteMemberResponse
+	var sm SiteMemberResponse
 	err = json.Unmarshal(resp, &sm)
 	if err != nil {
-		return siteMemberResponse{}, err
+		return SiteMemberResponse{}, err
 	}
 
 	return sm, nil
