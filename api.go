@@ -564,7 +564,26 @@ func (sc *Client) GetCustomAlert(corpName, siteName, id string) (CustomAlert, er
 	return ca, nil
 }
 
-// GetCustomAlert gets a custom alert by ID.
+// UpdateCustomAlert updates a custom alert by id.
+func (sc *Client) UpdateCustomAlert(corpName, siteName, id string, body CustomAlertBody) (CustomAlert, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), string(b))
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	var c CustomAlert
+	err = json.Unmarshal(resp, &c)
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	return c, err
+}
 
 // DeleteCustomAlert deletes a custom alert.
 func (sc *Client) DeleteCustomAlert(corpName, siteName, id string) error {
@@ -678,7 +697,32 @@ type Request struct {
 	Tags              []RequestTag
 }
 
+// requestsResponse is the response for the search requests endpoint
+type requestsResponse struct {
+	TotalCount int
+	Next       map[string]string
+	Data       []Request
+}
+
 // SearchRequests searches requests.
+func (sc *Client) SearchRequests(corpName, siteName string, query url.Values) (next string, requests []Request, err error) {
+	url := fmt.Sprintf("/v0/corps/%s/sites/%s/requests", corpName, siteName)
+	if query.Encode() != "" {
+		url += "?" + query.Encode()
+	}
+	resp, err := sc.doRequest("GET", url, "")
+	if err != nil {
+		return "", []Request{}, err
+	}
+
+	var r requestsResponse
+	err = json.Unmarshal(resp, &r)
+	if err != nil {
+		return "", []Request{}, err
+	}
+
+	return r.Next["uri"], r.Data, nil
+}
 
 // GetRequest gets a request by id.
 func (sc *Client) GetRequest(corpName, siteName, id string) (Request, error) {
@@ -696,14 +740,31 @@ func (sc *Client) GetRequest(corpName, siteName, id string) (Request, error) {
 	return r, nil
 }
 
-// requestsResponse is the response for the search requests endpoint
-type requestsResponse struct {
-	TotalCount int
-	Next       map[string]string
-	Data       []Request
+// requestFeedResponse is the response for the requests feed endpoint.
+type requestFeedResponse struct {
+	Next map[string]string
+	Data []Request
 }
 
 // GetRequestFeed gets the request feed for the site.
+func (sc *Client) GetRequestFeed(corpName, siteName string, query url.Values) (next string, requests []Request, err error) {
+	url := fmt.Sprintf("/v0/corps/%s/sites/%s/feed/requests", corpName, siteName)
+	if query.Encode() != "" {
+		url += "?" + query.Encode()
+	}
+	resp, err := sc.doRequest("GET", url, "")
+	if err != nil {
+		return "", []Request{}, err
+	}
+
+	var r requestFeedResponse
+	err = json.Unmarshal(resp, &r)
+	if err != nil {
+		return "", []Request{}, err
+	}
+
+	return r.Next["uri"], r.Data, nil
+}
 
 // ListIP is a whitelisted or blacklisted IP address.
 type ListIP struct {
@@ -895,6 +956,33 @@ func (sc *Client) AddRedaction(corpName, siteName string, body RedactionBody) ([
 	}
 
 	return r.Data, nil
+}
+
+// UpdateRedactionBody is the body for updating an integration.
+type UpdateRedactionBody struct {
+	Field         string `json:"field,omitempty"`
+	RedactionType int    `json:"redactionType,omitempty"`
+}
+
+// UpdateRedaction updates a redaction by id.
+func (sc *Client) UpdateRedaction(corpName, siteName, id string, body UpdateRedactionBody) (Redaction, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return Redaction{}, err
+	}
+
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), string(b))
+	if err != nil {
+		return Redaction{}, err
+	}
+
+	var r Redaction
+	err = json.Unmarshal(resp, &r)
+	if err != nil {
+		return Redaction{}, err
+	}
+
+	return r, err
 }
 
 // GetRedaction gets a redaction by id.
@@ -1659,6 +1747,78 @@ func (sc *Client) ListTopAttacks(corpName, siteName string, query url.Values) ([
 	return tr.Data, nil
 }
 
+// Timeseries contains timeseries request info.
+type Timeseries struct {
+	Type         string
+	From         int
+	Until        int
+	Inc          int
+	Data         []int
+	SummaryCount int
+	TotalPoints  int
+}
+
+type timeseriesResponse struct {
+	Data []Timeseries
+}
+
 // GetTimeseries gets timeseries request info.
+func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]Timeseries, error) {
+	url := fmt.Sprintf("/v0/corps/%s/sites/%s/timeseries/requests", corpName, siteName)
+	if query.Encode() != "" {
+		url += "?" + query.Encode()
+	}
+	resp, err := sc.doRequest("GET", url, "")
+	if err != nil {
+		return []Timeseries{}, err
+	}
+
+	var t timeseriesResponse
+	err = json.Unmarshal(resp, &t)
+	if err != nil {
+		return []Timeseries{}, err
+	}
+
+	return t.Data, nil
+}
+
+type healthCheck struct {
+	Name   string
+	Status string
+	Data   map[string]interface{}
+}
+
+type siteHealth struct {
+	SiteName     string
+	DisplayName  string
+	Grade        string
+	AgentsCount  int
+	ModulesCount int
+	HealthChecks []healthCheck
+}
+
+// HealthReport is the response for the health check report endpoint.
+type HealthReport struct {
+	CorpName     string
+	Grade        string
+	SiteLimit    int
+	UsersCount   int
+	HealthChecks []healthCheck
+	SiteMetrics  []siteHealth
+}
 
 // GetHealthReport gets the health report for a given corp by name.
+func (sc *Client) GetHealthReport(corpName string) (HealthReport, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/health", corpName), "")
+	if err != nil {
+		return HealthReport{}, err
+	}
+
+	var h HealthReport
+	err = json.Unmarshal(resp, &h)
+	if err != nil {
+		return HealthReport{}, err
+	}
+
+	return h, nil
+}
