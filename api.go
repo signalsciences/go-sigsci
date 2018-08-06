@@ -70,6 +70,7 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "go-sigsci")
 
 	resp, err := client.Do(req)
 	if err != nil {
