@@ -26,7 +26,6 @@ if err != nil {
 package main
 
 import (
-        "fmt"
         "log"
 
         sigsci "github.com/signalsciences/go-sigsci"
