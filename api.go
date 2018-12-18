@@ -17,6 +17,7 @@ const apiURL = "https://dashboard.signalsciences.net/api"
 
 // Client is the API client
 type Client struct {
+	email string
 	token string
 }
 
@@ -29,6 +30,14 @@ func NewClient(email, password string) (Client, error) {
 	}
 
 	return sc, nil
+}
+
+// NewTokenClient creates a Client using token authentication
+func NewTokenClient(email, token string) Client {
+	return Client{
+		email: email,
+		token: token,
+	}
 }
 
 // authenticate takes email/password and authenticates, attaching the
@@ -68,7 +77,14 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
+	if sc.email != "" {
+		// token auth
+		req.Header.Set("X-API-User", sc.email)
+		req.Header.Set("X-API-Token", sc.token)
+	} else {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
+	}
+
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "go-sigsci")
 
