@@ -1158,57 +1158,6 @@ func (sc *Client) ListParams(corpName, siteName string) ([]Param, error) {
 	return pr.Data, nil
 }
 
-// ParamBody is the body for adding a whitelisted parameter.
-type ParamBody struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Note string `json:"note"`
-}
-
-// AddParam adds a whitelisted parameter.
-func (sc *Client) AddParam(corpName, siteName string, body ParamBody) ([]Param, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return []Param{}, err
-	}
-
-	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist", corpName, siteName), string(b))
-	if err != nil {
-		return []Param{}, err
-	}
-
-	var pr paramsResponse
-	err = json.Unmarshal(resp, &pr)
-	if err != nil {
-		return []Param{}, err
-	}
-
-	return pr.Data, nil
-}
-
-// GetParam gets a whitelisted param by id.
-func (sc *Client) GetParam(corpName, siteName, id string) (Param, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist/%s", corpName, siteName, id), "")
-	if err != nil {
-		return Param{}, err
-	}
-
-	var p Param
-	err = json.Unmarshal(resp, &p)
-	if err != nil {
-		return Param{}, err
-	}
-
-	return p, nil
-}
-
-// DeleteParam deletes a whitelisted parameter by id.
-func (sc *Client) DeleteParam(corpName, siteName, id string) error {
-	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/paramwhitelist/%s", corpName, siteName, id), "")
-
-	return err
-}
-
 // Path is a whitelisted path.
 type Path struct {
 	ID        string
@@ -1237,56 +1186,6 @@ func (sc *Client) ListPaths(corpName, siteName string) ([]Path, error) {
 	}
 
 	return pr.Data, nil
-}
-
-// PathBody is the body for creating a whitelisted path.
-type PathBody struct {
-	Path string `json:"path"`
-	Note string `json:"note"`
-}
-
-// AddPath adds a whitelisted path.
-func (sc *Client) AddPath(corpName, siteName string, body PathBody) ([]Path, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return []Path{}, err
-	}
-
-	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist", corpName, siteName), string(b))
-	if err != nil {
-		return []Path{}, err
-	}
-
-	var pr pathsResponse
-	err = json.Unmarshal(resp, &pr)
-	if err != nil {
-		return []Path{}, err
-	}
-
-	return pr.Data, nil
-}
-
-// GetPath gets a whitelisted path by id.
-func (sc *Client) GetPath(corpName, siteName, id string) (Path, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist/%s", corpName, siteName, id), "")
-	if err != nil {
-		return Path{}, err
-	}
-
-	var p Path
-	err = json.Unmarshal(resp, &p)
-	if err != nil {
-		return Path{}, err
-	}
-
-	return p, nil
-}
-
-// DeletePath deletes a whitelisted path by id.
-func (sc *Client) DeletePath(corpName, siteName, id string) error {
-	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/pathwhitelist/%s", corpName, siteName, id), "")
-
-	return err
 }
 
 // ListSiteActivity lists activity events for a given site.
