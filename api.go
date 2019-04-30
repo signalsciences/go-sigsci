@@ -1357,7 +1357,7 @@ func (sc *Client) GetSiteMember(corpName, siteName, email string) (SiteMember, e
 	return s, nil
 }
 
-// SiteMemberBody is the body for updating or inviting a site member.
+// SiteMemberBody is the body for inviting a site member.
 type SiteMemberBody struct {
 	Role Role `json:"role"`
 }
@@ -1369,14 +1369,9 @@ type SiteMemberResponse struct {
 	Status string
 }
 
-// UpdateSiteMember updates a site member by email.
-func (sc *Client) UpdateSiteMember(corpName, siteName, email string, body SiteMemberBody) (SiteMemberResponse, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return SiteMemberResponse{}, err
-	}
-
-	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), string(b))
+// AddSiteMember updates a site member by email.
+func (sc *Client) AddSiteMember(corpName, siteName, email string) (SiteMemberResponse, error) {
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), "")
 	if err != nil {
 		return SiteMemberResponse{}, err
 	}
