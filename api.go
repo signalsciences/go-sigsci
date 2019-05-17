@@ -285,6 +285,25 @@ func (sc *Client) DeleteCorpUser(corpName, email string) error {
 	return err
 }
 
+type site struct {
+	Name string `json:"name"`
+}
+
+// SiteMembership contains the data needed for inviting a member to a site.
+type SiteMembership struct {
+	Site site `json:"site"`
+	Role Role `json:"role"`
+}
+
+// NewSiteMembership returns a new site membership object for the given
+// site name and role.
+func NewSiteMembership(name string, role Role) SiteMembership {
+	return SiteMembership{
+		Site: site{Name: name},
+		Role: role,
+	}
+}
+
 type inviteMemberships struct {
 	Data []SiteMembership `json:"data"`
 }
@@ -1288,25 +1307,6 @@ func (sc *Client) DeleteHeaderLink(corpName, siteName, id string) error {
 	return err
 }
 
-type site struct {
-	Name string `json:"name"`
-}
-
-// SiteMembership contains the data needed for inviting a member to a site.
-type SiteMembership struct {
-	Site site `json:"site"`
-	Role Role `json:"role"`
-}
-
-// NewSiteMembership returns a new site membership object for the given
-// site name and role.
-func NewSiteMembership(name string, role Role) SiteMembership {
-	return SiteMembership{
-		Site: site{Name: name},
-		Role: role,
-	}
-}
-
 // SiteMemberUser is the embedded user object in the site members response.
 type SiteMemberUser struct {
 	Name   string
@@ -1341,6 +1341,32 @@ func (sc *Client) ListSiteMembers(corpName, siteName string) ([]SiteMember, erro
 	return sr.Data, nil
 }
 
+// siteMembersBody is the body for adding one or more existing users to a site.
+type siteMembersBody struct {
+	Members []string `json:"members"`
+}
+
+// AddSiteMembers adds one or more existing users to a site.
+func (sc *Client) AddSiteMembers(corpName, siteName string, body siteMembersBody) ([]SiteMember, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return []SiteMember{}, err
+	}
+
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/members", corpName, siteName), string(b))
+	if err != nil {
+		return []SiteMember{}, err
+	}
+
+	var sm siteMembersResponse
+	err = json.Unmarshal(resp, &sm)
+	if err != nil {
+		return []SiteMember{}, err
+	}
+
+	return sm.Data, nil
+}
+
 // GetSiteMember gets a site member by email.
 func (sc *Client) GetSiteMember(corpName, siteName, email string) (SiteMember, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), "")
@@ -1357,19 +1383,19 @@ func (sc *Client) GetSiteMember(corpName, siteName, email string) (SiteMember, e
 	return s, nil
 }
 
-// SiteMemberBody is the body for inviting a site member.
+// SiteMemberBody is the body for inviting a user to a site.
 type SiteMemberBody struct {
 	Role Role `json:"role"`
 }
 
-// SiteMemberResponse is the response for updating or inviting a site member.
+// SiteMemberResponse is the response for inviting a user to a site.
 type SiteMemberResponse struct {
 	Email  string
 	Role   Role
 	Status string
 }
 
-// AddSiteMember updates a site member by email.
+// AddSiteMember adds an existing user to a site by email.
 func (sc *Client) AddSiteMember(corpName, siteName, email string) (SiteMemberResponse, error) {
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/members/%s", corpName, siteName, email), "")
 	if err != nil {
@@ -1392,7 +1418,7 @@ func (sc *Client) DeleteSiteMember(corpName, siteName, email string) error {
 	return err
 }
 
-// InviteSiteMember invites a site member by email.
+// InviteSiteMember invites a new user to a site by email.
 func (sc *Client) InviteSiteMember(corpName, siteName, email string, body SiteMemberBody) (SiteMemberResponse, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
