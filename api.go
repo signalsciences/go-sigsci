@@ -219,6 +219,14 @@ type Role string
 
 // All available Roles
 const (
+	RoleNoAccess = Role("none")
+	RoleUnknown  = Role("unknown")
+	RoleOwner    = Role("owner")
+	RoleAdmin    = Role("admin")
+	RoleUser     = Role("user")
+	RoleObserver = Role("observer")
+
+	// Deprecated corp/site roles
 	RoleSiteNoAccess = Role("none")
 	RoleSiteUnknown  = Role("unknown")
 	RoleSiteOwner    = Role("owner")
