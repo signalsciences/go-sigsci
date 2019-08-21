@@ -1,3 +1,3 @@
 lint:
-	gometalinter --disable-all --enable=golint --enable=vet --enable=gofmt ./...
-	find . -name '*.go' | xargs gofmt -w -s
+	go vet
+	test -z $(gofmt -s -l .)
