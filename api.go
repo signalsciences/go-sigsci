@@ -1727,3 +1727,24 @@ func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]
 
 	return t.Data, nil
 }
+
+func (sc *Client) CreateSite(corpName, siteName string, body CustomAlertBody) (string, error) {
+	return fmt.Sprintf("Janithet Corp %s, Site %s", corpName, siteName), nil
+	// b, err := json.Marshal(body)
+	// if err != nil {
+	// 	return CustomAlert{}, err
+	// }
+
+	// resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), string(b))
+	// if err != nil {
+	// 	return CustomAlert{}, err
+	// }
+
+	// var c CustomAlert
+	// err = json.Unmarshal(resp, &c)
+	// if err != nil {
+	// 	return CustomAlert{}, err
+	// }
+
+	// return c, nil
+}
