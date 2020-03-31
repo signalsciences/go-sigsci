@@ -578,7 +578,7 @@ func (sc *Client) CreateCustomAlert(corpName, siteName string, body CustomAlertB
 		return CustomAlert{}, err
 	}
 
-	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), string(b))
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), string(b))
 	if err != nil {
 		return CustomAlert{}, err
 	}
@@ -1728,23 +1728,38 @@ func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]
 	return t.Data, nil
 }
 
-func (sc *Client) CreateSite(corpName, siteName string, body CustomAlertBody) (string, error) {
-	return fmt.Sprintf("Janithet Corp %s, Site %s", corpName, siteName), nil
-	// b, err := json.Marshal(body)
-	// if err != nil {
-	// 	return CustomAlert{}, err
-	// }
+// CreateSiteBody is the structure required to create a Site.
+type CreateSiteBody struct {
+	Name                 string `json:"name"`
+	DisplayName          string `json:"displayName,omitempty"`
+	AgentLevel           string `json:"agentLevel,omitempty"`
+	BlockHTTPCode        int    `json:"blockHTTPCode,omitempty"`
+	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
+}
 
-	// resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), string(b))
-	// if err != nil {
-	// 	return CustomAlert{}, err
-	// }
+// CreateSite Creates a site in a corp.
+func (sc *Client) CreateSite(corpName string, body CreateSiteBody) (Site, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return Site{}, err
+	}
 
-	// var c CustomAlert
-	// err = json.Unmarshal(resp, &c)
-	// if err != nil {
-	// 	return CustomAlert{}, err
-	// }
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites", corpName), string(b))
+	if err != nil {
+		return Site{}, err
+	}
 
-	// return c, nil
+	var site Site
+	err = json.Unmarshal(resp, &site)
+	if err != nil {
+		return Site{}, err
+	}
+	return site, nil
+}
+
+// DeleteSite deltes the site
+func (sc *Client) DeleteSite(corpName string, siteName string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s", corpName, siteName), "")
+
+	return err
 }
