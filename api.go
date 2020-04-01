@@ -1763,3 +1763,65 @@ func (sc *Client) DeleteSite(corpName string, siteName string) error {
 
 	return err
 }
+
+// Conditions contains rule condition
+type Condition struct {
+	Type          string `json:"type"`
+	GroupOperator string `json:"groupOperator"`
+	Field         string `json:"field"`
+	Operator      string `json:"operator"`
+	Value         string `json:"value"`
+}
+
+// Action contains the rule action
+type Action struct {
+	Type string `json:"type"`
+}
+
+// CreateSiteRulesBody contains the rule for the site
+type CreateSiteRulesBody struct {
+	Type          string      `json:"type"`
+	GroupOperator string      `json:"groupOperator"`
+	Enabled       bool        `json:"enabled"`
+	Reason        string      `json:"reason"`
+	Signal        string      `json:"signal"`
+	Expiration    string      `json:"expiration"`
+	Conditions    []Condition `json:"conditions"`
+	Actions       []Action    `json:"actions"`
+}
+
+// ResponseSiteRulesBody contains the response from creating the rule
+type ResponseSiteRulesBody struct {
+	*CreateSiteRulesBody
+	ID        string `json:"id"`
+	CreatedBy string `json:"createdby"`
+	Created   string `json:"created"`
+	Updated   string `json:"updated"`
+}
+
+// type Message struct {
+// 	Message string `json:"message"`
+// }
+// CreateSiteRules creates a rule and returns the response
+func (sc *Client) CreateSiteRules(corpName string, siteName string, body CreateSiteRulesBody) (ResponseSiteRulesBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), string(b))
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	var responseSiteRules ResponseSiteRulesBody
+	err = json.Unmarshal(resp, &responseSiteRules)
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	return responseSiteRules, nil
+}
+
+// DeleteSiteRule deletes a rule and returns an error
+func (sc *Client) DeleteSiteRule(corpName string, siteName string, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
+	return err
+}
