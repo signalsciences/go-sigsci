@@ -1733,6 +1733,7 @@ type CreateSiteBody struct {
 	Name                 string `json:"name"`
 	DisplayName          string `json:"displayName,omitempty"`
 	AgentLevel           string `json:"agentLevel,omitempty"`
+	AgentAnonMode        string `json:"agentAnonMode,omiempty"`
 	BlockHTTPCode        int    `json:"blockHTTPCode,omitempty"`
 	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
 }
@@ -1764,13 +1765,14 @@ func (sc *Client) DeleteSite(corpName string, siteName string) error {
 	return err
 }
 
-// Conditions contains rule condition
+// Condition contains rule condition
 type Condition struct {
-	Type          string `json:"type"`
-	GroupOperator string `json:"groupOperator"`
-	Field         string `json:"field"`
-	Operator      string `json:"operator"`
-	Value         string `json:"value"`
+	Type          string      `json:"type"`
+	GroupOperator string      `json:"groupOperator"`
+	Field         string      `json:"field"`
+	Operator      string      `json:"operator"`
+	Value         string      `json:"value"`
+	Conditions    []Condition `json:"conditions"`
 }
 
 // Action contains the rule action
@@ -1799,9 +1801,6 @@ type ResponseSiteRulesBody struct {
 	Updated   string `json:"updated"`
 }
 
-// type Message struct {
-// 	Message string `json:"message"`
-// }
 // CreateSiteRules creates a rule and returns the response
 func (sc *Client) CreateSiteRules(corpName string, siteName string, body CreateSiteRulesBody) (ResponseSiteRulesBody, error) {
 	b, err := json.Marshal(body)
@@ -1820,8 +1819,49 @@ func (sc *Client) CreateSiteRules(corpName string, siteName string, body CreateS
 	return responseSiteRules, nil
 }
 
+// UpdateSiteRule updates a rule and returns a response
+func (sc *Client) UpdateSiteRule(corpName string, siteName string, id string, body CreateSiteRulesBody) (ResponseSiteRulesBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), string(b))
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	var responseSiteRules ResponseSiteRulesBody
+	err = json.Unmarshal(resp, &responseSiteRules)
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	return responseSiteRules, nil
+}
+
 // DeleteSiteRule deletes a rule and returns an error
 func (sc *Client) DeleteSiteRule(corpName string, siteName string, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
 	return err
+}
+
+// ResponseSiteRulesListData contains the returned rules
+type ResponseSiteRulesListData struct {
+	TotalCount int                     `json:"totalCount"`
+	Data       []ResponseSiteRulesBody `json:"data"`
+}
+
+// ListSiteRules Lists the Site Rules
+func (sc *Client) ListSiteRules(corpName string, siteName string) ([]ResponseSiteRulesBody, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), "")
+
+	if err != nil {
+		return []ResponseSiteRulesBody{}, err
+	}
+
+	var responseRulesList ResponseSiteRulesListData
+	err = json.Unmarshal(resp, &responseRulesList)
+	if err != nil {
+		return []ResponseSiteRulesBody{}, err
+	}
+
+	return responseRulesList.Data, nil
 }
