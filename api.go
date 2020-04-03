@@ -1811,12 +1811,7 @@ func (sc *Client) CreateSiteRules(corpName string, siteName string, body CreateS
 	if err != nil {
 		return ResponseSiteRulesBody{}, err
 	}
-	var responseSiteRules ResponseSiteRulesBody
-	err = json.Unmarshal(resp, &responseSiteRules)
-	if err != nil {
-		return ResponseSiteRulesBody{}, err
-	}
-	return responseSiteRules, nil
+	return getResponseSiteRulesBody(resp)
 }
 
 // UpdateSiteRule updates a rule and returns a response
@@ -1829,18 +1824,29 @@ func (sc *Client) UpdateSiteRule(corpName string, siteName string, id string, bo
 	if err != nil {
 		return ResponseSiteRulesBody{}, err
 	}
-	var responseSiteRules ResponseSiteRulesBody
-	err = json.Unmarshal(resp, &responseSiteRules)
-	if err != nil {
-		return ResponseSiteRulesBody{}, err
-	}
-	return responseSiteRules, nil
+	return getResponseSiteRulesBody(resp)
 }
 
 // DeleteSiteRule deletes a rule and returns an error
 func (sc *Client) DeleteSiteRule(corpName string, siteName string, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
 	return err
+}
+func (sc *Client) GetSiteRuleById(corpName string, siteName string, id string) (ResponseSiteRulesBody, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	return getResponseSiteRulesBody(resp)
+}
+
+func getResponseSiteRulesBody(response []byte) (ResponseSiteRulesBody, error) {
+	var responseSiteRules ResponseSiteRulesBody
+	err := json.Unmarshal(response, &responseSiteRules)
+	if err != nil {
+		return ResponseSiteRulesBody{}, err
+	}
+	return responseSiteRules, nil
 }
 
 // ResponseSiteRulesListData contains the returned rules
