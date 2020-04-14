@@ -12,3 +12,5 @@
 *.out
 
 .idea/
+.vscode/settings.json
+.vscode/launch.json

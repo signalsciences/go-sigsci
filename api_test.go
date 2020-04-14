@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,7 +61,7 @@ func TestGoUserTokenClient(t *testing.T) {
 		})
 	}
 }
-func TestCreateSite(t *testing.T) {
+func TestCreateDeleteSite(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := "splunk-testcorp"
 
@@ -70,24 +71,17 @@ func TestCreateSite(t *testing.T) {
 		AgentLevel:           "Log",
 		BlockHTTPCode:        406,
 		BlockDurationSeconds: 86400,
-		AgentAnonMode:        "off",
+		AgentAnonMode:        "",
 	}
-	_, err := sc.CreateSite(corp, siteBody)
-	if err == nil {
-		t.Fatal("Can create more than one site. Clean up not implemented")
+	siteresponse, err := sc.CreateSite(corp, siteBody)
+	if err != nil {
+		t.Fatal(err)
 	}
-	assert.Equal(t, "Site limit reached", err.Error())
-
-}
-func TestDeleteSite(t *testing.T) {
-	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-testcorp"
-	site := "janitha-test-site" //do not have permission at the moment anyway
-	err := sc.DeleteSite(corp, site)
-	if err == nil {
-		t.Fatalf("This site %s should not exist", site)
+	assert.Equal(t, "Janitha Test Site", siteresponse.DisplayName)
+	err = sc.DeleteSite(corp, siteBody.Name)
+	if err != nil {
+		t.Logf("%#v", err)
 	}
-	assert.Equal(t, "Site not found", err.Error())
 }
 func TestGetAlerts(t *testing.T) {
 	t.Skip()
@@ -324,7 +318,7 @@ func TestUnMarshalListData(t *testing.T) {
 }
 
 func TestDeleteAllSiteRules(t *testing.T) {
-	t.SkipNow()
+	// t.SkipNow()
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := "splunk-tescorp"
 	site := "splunk-test"
@@ -398,11 +392,12 @@ func TestGetSiteRuleById(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
 func TestSigSciAPI(t *testing.T) {
+	t.SkipNow()
 	testCases := map[string]map[string]func(t *testing.T){
 		"Site": {
-			"create": TestCreateSite,
-			"delete": TestDeleteSite,
+			"createdelete": TestCreateDeleteSite,
 		},
 		"Rule": {
 			"list":               TestListSiteRules,
@@ -422,5 +417,201 @@ func TestSigSciAPI(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
+	testCases := []struct {
+		createFunc     func(string, string, CreateSiteListBody) (ResponseSiteListBody, error)
+		deleteFunc     func(string, string, string) error
+		createBody     interface{}
+		createBodyType string
+	}{
+		{
+			NewTokenClient(testcreds.email, testcreds.token).CreateSiteList, //this is method I think these works for functions
+			NewTokenClient(testcreds.email, testcreds.token).DeleteSiteListByID,
+			CreateSiteListBody{
+				Name:        "My new List",
+				Type:        "ip",
+				Description: "Some IPs we are putting in a list",
+				Entries: []string{
+					"4.5.6.7",
+					"2.3.4.5",
+					"1.2.3.4",
+				},
+			},
+			"CreateSiteListBody",
+		},
+	}
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := "splunk-tescorp"
+	site := "splunk-test"
+
+	// createresp, err := sc.CreateSiteList(corp, site, siteListBody)
+	mytype := reflect.TypeOf(testCases[0].createBody)
+	// myval := reflect.ValueOf(testCases[0].createBody)
+
+	// t.Logf("%v, %v", mytype, myval)
+	assert.Equal(t, mytype, reflect.TypeOf(CreateSiteListBody{}))
+	createresp, err := testCases[0].createFunc(corp, site, testCases[0].createBody.(CreateSiteListBody))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, testCases[0].createBody.(CreateSiteListBody), *createresp.CreateSiteListBody)
+	readresp, err := sc.GetSiteListByID(corp, site, createresp.ID)
+	assert.Equal(t, testCases[0].createBody.(CreateSiteListBody), *readresp.CreateSiteListBody)
+
+	updateSiteListBody := UpdateSiteListBody{
+		Description: "Some IPs we are updating in the list",
+		Entries: Entries{
+			Additions: []string{"3.4.5.6"},
+			Deletions: []string{"4.5.6.7"},
+		},
+	}
+	updatedresp, err := sc.UpdateSiteListByID(corp, site, readresp.ID, updateSiteListBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEqual(t, testCases[0].createBody.(CreateSiteListBody), *updatedresp.CreateSiteListBody)
+	err = sc.DeleteSiteListByID(corp, site, readresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreateMultipleRedactions(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := "splunk-tescorp"
+	site := "splunk-test"
+
+	createSiteRedactionBody := CreateSiteRedactionBody{
+		Field:         "privatefield",
+		RedactionType: 2,
+	}
+	createresp, err := sc.CreateSiteRedaction(corp, site, createSiteRedactionBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createSiteRedactionBody, *createresp.CreateSiteRedactionBody)
+
+	createSiteRedactionBody2 := CreateSiteRedactionBody{
+		Field:         "cookie",
+		RedactionType: 2,
+	}
+	createresp2, err := sc.CreateSiteRedaction(corp, site, createSiteRedactionBody2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createSiteRedactionBody2, *createresp2.CreateSiteRedactionBody)
+
+	createSiteRedactionBody3 := CreateSiteRedactionBody{
+		Field:         "cookie",
+		RedactionType: 1,
+	}
+	createresp3, err := sc.CreateSiteRedaction(corp, site, createSiteRedactionBody3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createSiteRedactionBody3, *createresp3.CreateSiteRedactionBody)
+
+	err = sc.DeleteSiteRedactionByID(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sc.DeleteSiteRedactionByID(corp, site, createresp2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sc.DeleteSiteRedactionByID(corp, site, createresp3.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+func TestCreatListUpdateDeleteRedaction(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := "splunk-tescorp"
+	site := "splunk-test"
+
+	createSiteRedactionBody := CreateSiteRedactionBody{
+		Field:         "privatefield",
+		RedactionType: 2,
+	}
+	createresp, err := sc.CreateSiteRedaction(corp, site, createSiteRedactionBody)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, createSiteRedactionBody, *createresp.CreateSiteRedactionBody)
+
+	listresp, err := sc.ListSiteRedactions(corp, site)
+	assert.Equal(t, 1, len(listresp.Data))
+
+	readresp, err := sc.GetSiteRedactionByID(corp, site, createresp.ID)
+	assert.Equal(t, createSiteRedactionBody, *readresp.CreateSiteRedactionBody)
+
+	updateSiteRedactionBody := UpdateSiteRedactionBody{
+		Field:         "cookie",
+		RedactionType: 1,
+	}
+	updatedresp, err := sc.UpdateSiteRedactionByID(corp, site, createresp.ID, updateSiteRedactionBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.NotEqual(t, createSiteRedactionBody, *updatedresp.CreateSiteRedactionBody)
+	assert.Equal(t, updateSiteRedactionBody.Field, *&updatedresp.CreateSiteRedactionBody.Field)
+	assert.Equal(t, updateSiteRedactionBody.RedactionType, *&updatedresp.CreateSiteRedactionBody.RedactionType)
+
+	err = sc.DeleteSiteRedactionByID(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := "splunk-tescorp"
+	site := "splunk-test"
+
+	createCustomAlert := CustomAlertBody{
+		TagName:   "SQLI",
+		LongName:  "Example Alert",
+		Interval:  1,
+		Threshold: 10,
+		Enabled:   true,
+		Action:    "flagged",
+	}
+	createresp, err := sc.CreateCustomAlert(corp, site, createCustomAlert)
+	// t.Logf("%#v", createresp.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createCustomAlert, *createresp.CustomAlertBody)
+	readresp, err := sc.GetCustomAlert(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createCustomAlert, *readresp.CustomAlertBody)
+
+	updateCustomAlert := CustomAlertBody{
+		TagName:   "SQLI",
+		LongName:  "Example Alert Updated",
+		Interval:  10,
+		Threshold: 10,
+		Enabled:   true,
+		Action:    "flagged",
+	}
+	updateresp, err := sc.UpdateCustomAlert(corp, site, readresp.ID, updateCustomAlert)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// t.Logf("%#v", updateresp)
+	assert.NotEqual(t, createCustomAlert, *updateresp.CustomAlertBody)
+	assert.Equal(t, updateCustomAlert, *updateresp.CustomAlertBody)
+
+	err = sc.DeleteCustomAlert(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
