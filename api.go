@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -609,12 +610,12 @@ func (sc Client) GetCustomAlert(corpName, siteName, id string) (CustomAlert, err
 func (sc Client) UpdateCustomAlert(corpName, siteName, id string, body CustomAlertBody) (CustomAlert, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return CustomAlert{}, fmt.Errorf("%s with input %#v", err.Error(), string(b))
+		return CustomAlert{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), string(b)))
 	}
 
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), string(b))
 	if err != nil {
-		return CustomAlert{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return CustomAlert{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 
 	var c CustomAlert
@@ -1738,18 +1739,18 @@ type CreateSiteBody struct {
 func (sc Client) CreateSite(corpName string, body CreateSiteBody) (Site, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return Site{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return Site{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites", corpName), string(b))
 	if err != nil {
-		return Site{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return Site{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 
 	var site Site
 	err = json.Unmarshal(resp, &site)
 	if err != nil {
-		return Site{}, fmt.Errorf("%s with input %v", err.Error(), resp)
+		return Site{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), resp))
 	}
 	return site, nil
 }
@@ -1759,7 +1760,7 @@ func (sc Client) DeleteSite(corpName, siteName string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s", corpName, siteName), "")
 
 	if err != nil {
-		return fmt.Errorf("%s could not delete %s in %s ", err.Error(), corpName, siteName)
+		return logError(1, fmt.Errorf("%s could not delete %s in %s ", err.Error(), corpName, siteName))
 	}
 	return nil
 }
@@ -1810,11 +1811,11 @@ type ResponseSiteRuleListData struct {
 func (sc *Client) CreateSiteRule(corpName, siteName string, body CreateSiteRuleBody) (ResponseSiteRuleBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseSiteRuleBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseSiteRuleBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), string(b))
 	if err != nil {
-		return ResponseSiteRuleBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseSiteRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseSiteRuleBody(resp)
 }
@@ -1823,11 +1824,11 @@ func (sc *Client) CreateSiteRule(corpName, siteName string, body CreateSiteRuleB
 func (sc Client) UpdateSiteRuleByID(corpName, siteName, id string, body CreateSiteRuleBody) (ResponseSiteRuleBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseSiteRuleBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseSiteRuleBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), string(b))
 	if err != nil {
-		return ResponseSiteRuleBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseSiteRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseSiteRuleBody(resp)
 }
@@ -1836,7 +1837,7 @@ func (sc Client) UpdateSiteRuleByID(corpName, siteName, id string, body CreateSi
 func (sc Client) DeleteSiteRuleByID(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
 	if err != nil {
-		return fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName)
+		return logError(1, fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName))
 	}
 	return nil
 }
@@ -1845,7 +1846,7 @@ func (sc Client) DeleteSiteRuleByID(corpName, siteName, id string) error {
 func (sc Client) GetSiteRuleByID(corpName, siteName, id string) (ResponseSiteRuleBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
 	if err != nil {
-		return ResponseSiteRuleBody{}, fmt.Errorf("%s could not get %s in %s in %s", err.Error(), id, siteName, corpName)
+		return ResponseSiteRuleBody{}, logError(1, fmt.Errorf("%s could not get %s in %s in %s", err.Error(), id, siteName, corpName))
 	}
 	return getResponseSiteRuleBody(resp)
 }
@@ -1854,7 +1855,7 @@ func getResponseSiteRuleBody(response []byte) (ResponseSiteRuleBody, error) {
 	var responseSiteRules ResponseSiteRuleBody
 	err := json.Unmarshal(response, &responseSiteRules)
 	if err != nil {
-		return ResponseSiteRuleBody{}, fmt.Errorf("%s with input %v", err.Error(), response)
+		return ResponseSiteRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), response))
 	}
 	return responseSiteRules, nil
 }
@@ -1916,11 +1917,11 @@ type ResponseListListData struct {
 func (sc Client) CreateSiteList(corpName, siteName string, body CreateListBody) (ResponseListBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/lists", corpName, siteName), string(b))
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseListBody(resp)
 }
@@ -1938,11 +1939,11 @@ func getResponseListBody(response []byte) (ResponseListBody, error) {
 func (sc Client) UpdateSiteListByID(corpName, siteName string, id string, body UpdateListBody) (ResponseListBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/lists/%s", corpName, siteName, id), string(b))
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseListBody(resp)
 }
@@ -1951,7 +1952,7 @@ func (sc Client) UpdateSiteListByID(corpName, siteName string, id string, body U
 func (sc Client) DeleteSiteListByID(corpName, siteName string, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/lists/%s", corpName, siteName, id), "")
 	if err != nil {
-		return fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName)
+		return logError(1, fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName))
 	}
 	return nil
 }
@@ -1993,11 +1994,11 @@ type ResponseSiteRedactionBodyList struct {
 func (sc Client) CreateSiteRedaction(corpName, siteName string, body CreateSiteRedactionBody) (ResponseSiteRedactionBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseSiteRedactionBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseSiteRedactionBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions", corpName, siteName), string(b))
 	if err != nil {
-		return ResponseSiteRedactionBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseSiteRedactionBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	redactionsData, err := getResponseSiteRedactionListBody(resp)
 
@@ -2030,11 +2031,11 @@ func getResponseSiteRedactionBody(response []byte) (ResponseSiteRedactionBody, e
 func (sc Client) UpdateSiteRedactionByID(corpName, siteName string, id string, body CreateSiteRedactionBody) (ResponseSiteRedactionBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseSiteRedactionBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseSiteRedactionBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), string(b))
 	if err != nil {
-		return ResponseSiteRedactionBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseSiteRedactionBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseSiteRedactionBody(resp)
 }
@@ -2052,7 +2053,7 @@ func (sc Client) GetSiteRedactionByID(corpName, siteName, id string) (ResponseSi
 func (sc Client) DeleteSiteRedactionByID(corpName, siteName string, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), "")
 	if err != nil {
-		return fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName)
+		return logError(1, fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName))
 	}
 	return nil
 }
@@ -2101,11 +2102,11 @@ type ResponseCorpRuleBody struct {
 func (sc *Client) CreateCorpRule(corpName string, body CreateCorpRuleBody) (ResponseCorpRuleBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseCorpRuleBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/rules", corpName), string(b))
 	if err != nil {
-		return ResponseCorpRuleBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseCorpRuleBody(resp)
 }
@@ -2114,11 +2115,11 @@ func (sc *Client) CreateCorpRule(corpName string, body CreateCorpRuleBody) (Resp
 func (sc Client) UpdateCorpRuleByID(corpName, id string, body CreateCorpRuleBody) (ResponseCorpRuleBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseCorpRuleBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), string(b))
 	if err != nil {
-		return ResponseCorpRuleBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseCorpRuleBody(resp)
 }
@@ -2127,7 +2128,7 @@ func (sc Client) UpdateCorpRuleByID(corpName, id string, body CreateCorpRuleBody
 func (sc Client) DeleteCorpRuleByID(corpName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), "")
 	if err != nil {
-		return fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName)
+		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
 	}
 	return nil
 }
@@ -2136,7 +2137,7 @@ func (sc Client) DeleteCorpRuleByID(corpName, id string) error {
 func (sc Client) GetCorpRuleByID(corpName, id string) (ResponseCorpRuleBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), "")
 	if err != nil {
-		return ResponseCorpRuleBody{}, fmt.Errorf("%s could not get %s in %s", err.Error(), id, corpName)
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s could not get %s in %s", err.Error(), id, corpName))
 	}
 	return getResponseCorpRuleBody(resp)
 }
@@ -2145,7 +2146,7 @@ func getResponseCorpRuleBody(response []byte) (ResponseCorpRuleBody, error) {
 	var responseCorpRule ResponseCorpRuleBody
 	err := json.Unmarshal(response, &responseCorpRule)
 	if err != nil {
-		return ResponseCorpRuleBody{}, fmt.Errorf("%s with input %v", err.Error(), response)
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), response))
 	}
 	return responseCorpRule, nil
 }
@@ -2154,11 +2155,11 @@ func getResponseCorpRuleBody(response []byte) (ResponseCorpRuleBody, error) {
 func (sc Client) CreateCorpList(corpName string, body CreateListBody) (ResponseListBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/lists", corpName), string(b))
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseListBody(resp)
 }
@@ -2167,11 +2168,11 @@ func (sc Client) CreateCorpList(corpName string, body CreateListBody) (ResponseL
 func (sc Client) UpdateCorpListByID(corpName string, id string, body UpdateListBody) (ResponseListBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %#v", err.Error(), body)
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
 	}
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/lists/%s", corpName, id), string(b))
 	if err != nil {
-		return ResponseListBody{}, fmt.Errorf("%s with input %v", err.Error(), string(b))
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseListBody(resp)
 }
@@ -2180,7 +2181,7 @@ func (sc Client) UpdateCorpListByID(corpName string, id string, body UpdateListB
 func (sc Client) DeleteCorpListByID(corpName string, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/lists/%s", corpName, id), "")
 	if err != nil {
-		return fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName)
+		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
 	}
 	return nil
 }
@@ -2192,4 +2193,9 @@ func (sc Client) GetCorpListByID(corpName string, id string) (ResponseListBody, 
 		return ResponseListBody{}, err
 	}
 	return getResponseListBody(resp)
+}
+func logError(skip int, err error) error {
+	pc, _, line, _ := runtime.Caller(skip)
+	fn := runtime.FuncForPC(pc).Name()
+	return fmt.Errorf("[ERROR] %s:%d\t%s", fn, line, err.Error())
 }
