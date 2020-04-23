@@ -1801,8 +1801,8 @@ type ResponseSiteRuleBody struct {
 	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
 }
 
-// ResponseSiteRuleListData contains the returned rules
-type ResponseSiteRuleListData struct {
+// ResponseSiteRuleBodyList contains the returned rules
+type ResponseSiteRuleBodyList struct {
 	TotalCount int                    `json:"totalCount"`
 	Data       []ResponseSiteRuleBody `json:"data"`
 }
@@ -1860,21 +1860,21 @@ func getResponseSiteRuleBody(response []byte) (ResponseSiteRuleBody, error) {
 	return responseSiteRules, nil
 }
 
-// ListSiteRules Lists the Site Rules
-func (sc *Client) ListSiteRules(corpName, siteName string) ([]ResponseSiteRuleBody, error) {
+// GetAllSiteRules Lists the Site Rules
+func (sc *Client) GetAllSiteRules(corpName, siteName string) (ResponseSiteRuleBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), "")
 
 	if err != nil {
-		return []ResponseSiteRuleBody{}, err
+		return ResponseSiteRuleBodyList{}, err
 	}
 
-	var responseRulesList ResponseSiteRuleListData
+	var responseRulesList ResponseSiteRuleBodyList
 	err = json.Unmarshal(resp, &responseRulesList)
 	if err != nil {
-		return []ResponseSiteRuleBody{}, err
+		return ResponseSiteRuleBodyList{}, err
 	}
 
-	return responseRulesList.Data, nil
+	return responseRulesList, nil
 }
 
 // CreateListBody Create List Request
@@ -1883,7 +1883,6 @@ type CreateListBody struct {
 	Type        string   `json:"type,omitempty"`        //List types (string, ip, country, wildcard)
 	Description string   `json:"description,omitempty"` //Optional list description
 	Entries     []string `json:"entries,omitempty"`     //List entries
-	// *UpdateSiteListBody
 }
 
 // UpdateListBody update list
@@ -1907,10 +1906,10 @@ type ResponseListBody struct {
 	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
 }
 
-//ResponseListListData contains the returned list
-type ResponseListListData struct {
-	TotalCount int                `json:"totalCount"`
-	Data       []ResponseListBody `json:"data"` //Site List data
+//ResponseListBodyList contains the returned list
+type ResponseListBodyList struct {
+	// TotalCount int                `json:"totalCount"`
+	Data []ResponseListBody `json:"data"` //Site List data
 }
 
 //CreateSiteList Create a site list
@@ -1964,6 +1963,20 @@ func (sc Client) GetSiteListByID(corpName, siteName string, id string) (Response
 		return ResponseListBody{}, err
 	}
 	return getResponseListBody(resp)
+}
+
+//GetAllSiteLists get all site lists
+func (sc Client) GetAllSiteLists(corpName, siteName string) (ResponseListBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/lists", corpName, siteName), "")
+	if err != nil {
+		return ResponseListBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+	}
+	var responseListBodyList ResponseListBodyList
+	err = json.Unmarshal(resp, &responseListBodyList)
+	if err != nil {
+		return ResponseListBodyList{}, err
+	}
+	return responseListBodyList, nil
 }
 
 // CreateSiteRedactionBody Create redaction Request
@@ -2058,15 +2071,15 @@ func (sc Client) DeleteSiteRedactionByID(corpName, siteName string, id string) e
 	return nil
 }
 
-// ListSiteRedactions Lists the Sites Redactions
-func (sc *Client) ListSiteRedactions(corpName, siteName string) (ResponseSiteRedactionBodyList, error) {
+// GetAllSiteRedactions Lists the Sites Redactions
+func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteRedactionBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions", corpName, siteName), "")
 
 	if err != nil {
 		return ResponseSiteRedactionBodyList{}, err
 	}
 
-	var responseRulesList ResponseSiteRuleListData
+	var responseRulesList ResponseSiteRuleBodyList
 	err = json.Unmarshal(resp, &responseRulesList)
 	if err != nil {
 		return ResponseSiteRedactionBodyList{}, err
@@ -2093,9 +2106,15 @@ type CreateCorpRuleBody struct {
 type ResponseCorpRuleBody struct {
 	*CreateCorpRuleBody
 	ID        string    `json:"id"`
-	CreatedBy string    `json:"createdby"`
-	Created   time.Time `json:"created"`
-	Updated   time.Time `json:"updated"`
+	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
+	Created   time.Time `json:"created"`   //Created RFC3339 date time
+	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
+}
+
+//ResponseCorpRuleBodyList list
+type ResponseCorpRuleBodyList struct {
+	TotalCount int                    `json:"totalCount"`
+	Data       []ResponseCorpRuleBody `json:"data"` //ResponseCorpRuleBody
 }
 
 // CreateCorpRule creates a rule and returns the response
@@ -2142,6 +2161,19 @@ func (sc Client) GetCorpRuleByID(corpName, id string) (ResponseCorpRuleBody, err
 	return getResponseCorpRuleBody(resp)
 }
 
+//GetAllCorpRules get all corp rules
+func (sc Client) GetAllCorpRules(corpName string) (ResponseCorpRuleBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/rules", corpName), "")
+	if err != nil {
+		return ResponseCorpRuleBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+	}
+	var responseRuleBodyList ResponseCorpRuleBodyList
+	err = json.Unmarshal(resp, &responseRuleBodyList)
+	if err != nil {
+		return ResponseCorpRuleBodyList{}, err
+	}
+	return responseRuleBodyList, nil
+}
 func getResponseCorpRuleBody(response []byte) (ResponseCorpRuleBody, error) {
 	var responseCorpRule ResponseCorpRuleBody
 	err := json.Unmarshal(response, &responseCorpRule)
@@ -2193,6 +2225,20 @@ func (sc Client) GetCorpListByID(corpName string, id string) (ResponseListBody, 
 		return ResponseListBody{}, err
 	}
 	return getResponseListBody(resp)
+}
+
+//GetAllCorpLists get all corp lists
+func (sc Client) GetAllCorpLists(corpName string) (ResponseListBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/lists", corpName), "")
+	if err != nil {
+		return ResponseListBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+	}
+	var responseListBodyList ResponseListBodyList
+	err = json.Unmarshal(resp, &responseListBodyList)
+	if err != nil {
+		return ResponseListBodyList{}, err
+	}
+	return responseListBodyList, nil
 }
 func logError(skip int, err error) error {
 	pc, _, line, _ := runtime.Caller(skip)
