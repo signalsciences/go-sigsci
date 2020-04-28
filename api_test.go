@@ -171,13 +171,13 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRulesBody, *createResp.CreateSiteRuleBody)
+	assert.Equal(t, createSiteRulesBody, createResp.CreateSiteRuleBody)
 
 	readResp, err := sc.GetSiteRuleByID(corp, site, createResp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRulesBody, *readResp.CreateSiteRuleBody)
+	assert.Equal(t, createSiteRulesBody, readResp.CreateSiteRuleBody)
 	updateSiteRuleBody := CreateSiteRuleBody{
 		Type:          "signal",
 		GroupOperator: "all",
@@ -215,7 +215,7 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, updateSiteRuleBody, *updateResp.CreateSiteRuleBody)
+	assert.Equal(t, updateSiteRuleBody, updateResp.CreateSiteRuleBody)
 
 	readall, err := sc.GetAllSiteRules(corp, site)
 	if err != nil {
@@ -223,7 +223,7 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 	}
 	assert.Equal(t, 1, len(readall.Data))
 	assert.Equal(t, 1, readall.TotalCount)
-	assert.Equal(t, updateSiteRuleBody, *readall.Data[0].CreateSiteRuleBody)
+	assert.Equal(t, updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody)
 
 	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
 	if err != nil {
@@ -314,10 +314,10 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteListBody, *createresp.CreateListBody)
+	assert.Equal(t, createSiteListBody, createresp.CreateListBody)
 
 	readresp, err := sc.GetSiteListByID(corp, site, createresp.ID)
-	assert.Equal(t, createSiteListBody, *readresp.CreateListBody)
+	assert.Equal(t, createSiteListBody, readresp.CreateListBody)
 
 	updateSiteListBody := UpdateListBody{
 		Description: "Some IPs we are updating in the list",
@@ -330,7 +330,7 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEqual(t, createSiteListBody, *updateresp.CreateListBody)
+	assert.NotEqual(t, createSiteListBody, updateresp.CreateListBody)
 	updatedSiteListBody := CreateListBody{
 		Name:        "My new list",
 		Type:        "ip",
@@ -341,10 +341,10 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 			"3.4.5.6",
 		},
 	}
-	assert.Equal(t, updatedSiteListBody, *updateresp.CreateListBody)
+	assert.Equal(t, updatedSiteListBody, updateresp.CreateListBody)
 	readall, err := sc.GetAllSiteLists(corp, site)
 	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, updatedSiteListBody, *readall.Data[0].CreateListBody)
+	assert.Equal(t, updatedSiteListBody, readall.Data[0].CreateListBody)
 	err = sc.DeleteSiteListByID(corp, site, readresp.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -364,7 +364,7 @@ func TestCreateMultipleRedactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRedactionBody, *createresp.CreateSiteRedactionBody)
+	assert.Equal(t, createSiteRedactionBody, createresp.CreateSiteRedactionBody)
 
 	createSiteRedactionBody2 := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -374,7 +374,7 @@ func TestCreateMultipleRedactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRedactionBody2, *createresp2.CreateSiteRedactionBody)
+	assert.Equal(t, createSiteRedactionBody2, createresp2.CreateSiteRedactionBody)
 
 	createSiteRedactionBody3 := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -384,7 +384,7 @@ func TestCreateMultipleRedactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRedactionBody3, *createresp3.CreateSiteRedactionBody)
+	assert.Equal(t, createSiteRedactionBody3, createresp3.CreateSiteRedactionBody)
 
 	err = sc.DeleteSiteRedactionByID(corp, site, createresp.ID)
 	if err != nil {
@@ -414,10 +414,10 @@ func TestCreatListUpdateDeleteRedaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, createSiteRedactionBody, *createresp.CreateSiteRedactionBody)
+	assert.Equal(t, createSiteRedactionBody, createresp.CreateSiteRedactionBody)
 
 	readresp, err := sc.GetSiteRedactionByID(corp, site, createresp.ID)
-	assert.Equal(t, createSiteRedactionBody, *readresp.CreateSiteRedactionBody)
+	assert.Equal(t, createSiteRedactionBody, readresp.CreateSiteRedactionBody)
 
 	updateSiteRedactionBody := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -427,12 +427,12 @@ func TestCreatListUpdateDeleteRedaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEqual(t, createSiteRedactionBody, *updatedresp.CreateSiteRedactionBody)
-	assert.Equal(t, updateSiteRedactionBody, *updatedresp.CreateSiteRedactionBody)
+	assert.NotEqual(t, createSiteRedactionBody, updatedresp.CreateSiteRedactionBody)
+	assert.Equal(t, updateSiteRedactionBody, updatedresp.CreateSiteRedactionBody)
 	readall, err := sc.GetAllSiteRedactions(corp, site)
 	assert.Equal(t, 1, len(readall.Data))
 	// assert.Equal(t, 1, readall.TotalCount)
-	assert.Equal(t, updateSiteRedactionBody, *readall.Data[0].CreateSiteRedactionBody)
+	assert.Equal(t, updateSiteRedactionBody, readall.Data[0].CreateSiteRedactionBody)
 	err = sc.DeleteSiteRedactionByID(corp, site, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -528,7 +528,7 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 		t.Fatal(err)
 	}
 	// t.Logf("%#v", createResp.CreateCorpRuleBody)
-	assert.Equal(t, createCorpRuleBody, *createResp.CreateCorpRuleBody)
+	assert.Equal(t, createCorpRuleBody, createResp.CreateCorpRuleBody)
 
 	readResp, err := sc.GetCorpRuleByID(corp, createResp.ID)
 	if err != nil {
@@ -574,11 +574,11 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, updateCorpRuleBody, *updateResp.CreateCorpRuleBody)
+	assert.Equal(t, updateCorpRuleBody, updateResp.CreateCorpRuleBody)
 	readall, err := sc.GetAllCorpRules(corp)
 	assert.Equal(t, 1, len(readall.Data))
 	assert.Equal(t, 1, readall.TotalCount)
-	assert.Equal(t, updateCorpRuleBody, *readall.Data[0].CreateCorpRuleBody)
+	assert.Equal(t, updateCorpRuleBody, readall.Data[0].CreateCorpRuleBody)
 	err = sc.DeleteCorpRuleByID(corp, createResp.ID)
 
 	if err != nil {
@@ -603,10 +603,10 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createCorpListBody, *createresp.CreateListBody)
+	assert.Equal(t, createCorpListBody, createresp.CreateListBody)
 
 	readresp, err := sc.GetCorpListByID(corp, createresp.ID)
-	assert.Equal(t, createCorpListBody, *readresp.CreateListBody)
+	assert.Equal(t, createCorpListBody, readresp.CreateListBody)
 
 	updateCorpListBody := UpdateListBody{
 		Description: "Some IPs we are updating in the list",
@@ -619,7 +619,7 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEqual(t, createCorpListBody, *updateresp.CreateListBody)
+	assert.NotEqual(t, createCorpListBody, updateresp.CreateListBody)
 	updatedCorpListBody := CreateListBody{
 		Name:        "My new list",
 		Type:        "ip",
@@ -630,10 +630,10 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 			"3.4.5.6",
 		},
 	}
-	assert.Equal(t, updatedCorpListBody, *updateresp.CreateListBody)
+	assert.Equal(t, updatedCorpListBody, updateresp.CreateListBody)
 	readall, err := sc.GetAllCorpLists(corp)
 	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, updatedCorpListBody, *readall.Data[0].CreateListBody)
+	assert.Equal(t, updatedCorpListBody, readall.Data[0].CreateListBody)
 	err = sc.DeleteCorpListByID(corp, readresp.ID)
 	if err != nil {
 		t.Fatal(err)

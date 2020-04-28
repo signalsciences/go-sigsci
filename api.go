@@ -1794,7 +1794,7 @@ type CreateSiteRuleBody struct {
 
 // ResponseSiteRuleBody contains the response from creating the rule
 type ResponseSiteRuleBody struct {
-	*CreateSiteRuleBody
+	CreateSiteRuleBody
 	ID        string    `json:"id"`        //internal ID
 	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
 	Created   time.Time `json:"created"`   //Created RFC3339 date time
@@ -1899,7 +1899,7 @@ type Entries struct {
 
 // ResponseListBody contains the response from creating the list
 type ResponseListBody struct {
-	*CreateListBody
+	CreateListBody
 	ID        string    `json:"id"`        //internal ID
 	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
 	Created   time.Time `json:"created"`   //Created RFC3339 date time
@@ -1990,7 +1990,7 @@ type CreateSiteRedactionBody struct {
 
 // ResponseSiteRedactionBody redaction response
 type ResponseSiteRedactionBody struct {
-	*CreateSiteRedactionBody
+	CreateSiteRedactionBody
 	ID        string    `json:"id"`        //internal ID
 	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
 	Created   time.Time `json:"created"`   //Created RFC3339 date time
@@ -2104,7 +2104,7 @@ type CreateCorpRuleBody struct {
 
 // ResponseCorpRuleBody contains the response from creating the rule
 type ResponseCorpRuleBody struct {
-	*CreateCorpRuleBody
+	CreateCorpRuleBody
 	ID        string    `json:"id"`
 	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
 	Created   time.Time `json:"created"`   //Created RFC3339 date time
