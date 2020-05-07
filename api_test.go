@@ -61,6 +61,7 @@ func TestGoUserTokenClient(t *testing.T) {
 	}
 }
 func TestCreateDeleteSite(t *testing.T) {
+	t.Skip()
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := "splunk-testcorp"
 
