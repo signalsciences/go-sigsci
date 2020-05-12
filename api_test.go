@@ -83,52 +83,6 @@ func TestCreateDeleteSite(t *testing.T) {
 		t.Logf("%#v", err)
 	}
 }
-func TestGetAlerts(t *testing.T) {
-	t.Skip()
-	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
-	alert, err := sc.GetCustomAlert(corp, site, "5e828777a981ef01c7107035")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("%+v", alert)
-}
-func TestCreateCustomSiteAlert(t *testing.T) {
-	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
-	customAlertBody := CustomAlertBody{
-		TagName:   "CMDEXE",
-		LongName:  "Janitha Long Name",
-		Action:    "flagged",
-		Enabled:   true,
-		Interval:  1,
-		Threshold: 1,
-	}
-	alert, err := sc.CreateCustomAlert(corp, site, customAlertBody) //changed the method to POST
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, true, alert.Enabled)
-	customAlertBody = CustomAlertBody{
-		TagName:   "CMDEXE",
-		LongName:  "Janitha Long Name",
-		Action:    "flagged",
-		Enabled:   false,
-		Interval:  1,
-		Threshold: 1,
-	}
-	alertup, err := sc.UpdateCustomAlert(corp, site, alert.ID, customAlertBody)
-	assert.Equal(t, false, alertup.Enabled)
-	assert.Equal(t, alert.ID, alertup.ID)
-	err = sc.DeleteCustomAlert(corp, site, alert.ID)
-	_, err = sc.GetCustomAlert(corp, site, alert.ID)
-	if err == nil { //expect a failure because the ID does not exist
-		t.Fatal(err)
-	}
-	// assert.Equal(t, alert.ID, alertdel.ID)
-}
 
 func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 
@@ -445,7 +399,7 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	corp := "splunk-tescorp"
 	site := "splunk-test"
 
-	createCustomAlert := CustomAlertBody{
+	createCustomAlert := CreateCustomAlertBody{
 		TagName:   "SQLI",
 		LongName:  "Example Alert",
 		Interval:  1,
@@ -453,19 +407,19 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 		Enabled:   true,
 		Action:    "flagged",
 	}
-	createresp, err := sc.CreateCustomAlert(corp, site, createCustomAlert)
+	createresp, err := sc.CreateCustomSiteAlert(corp, site, createCustomAlert)
 	// t.Logf("%#v", createresp.Data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createCustomAlert, *createresp.CustomAlertBody)
-	readresp, err := sc.GetCustomAlert(corp, site, createresp.ID)
+	assert.Equal(t, createCustomAlert, createresp.CreateCustomAlertBody)
+	readresp, err := sc.GetCustomSiteAlertByID(corp, site, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createCustomAlert, *readresp.CustomAlertBody)
+	assert.Equal(t, createCustomAlert, readresp.CreateCustomAlertBody)
 
-	updateCustomAlert := CustomAlertBody{
+	updateCustomAlert := CreateCustomAlertBody{
 		TagName:   "SQLI",
 		LongName:  "Example Alert Updated",
 		Interval:  10,
@@ -473,18 +427,25 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 		Enabled:   true,
 		Action:    "flagged",
 	}
-	updateresp, err := sc.UpdateCustomAlert(corp, site, readresp.ID, updateCustomAlert)
+	updateresp, err := sc.UpdateCustomSiteAlertByID(corp, site, readresp.ID, updateCustomAlert)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// t.Logf("%#v", updateresp)
-	assert.NotEqual(t, createCustomAlert, *updateresp.CustomAlertBody)
-	assert.Equal(t, updateCustomAlert, *updateresp.CustomAlertBody)
-
-	err = sc.DeleteCustomAlert(corp, site, createresp.ID)
+	assert.NotEqual(t, createCustomAlert, updateresp.CreateCustomAlertBody)
+	assert.Equal(t, updateCustomAlert, updateresp.CreateCustomAlertBody)
+	allalerts, err := sc.GetAllCustomSiteAlerts(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.Equal(t, 1, len(allalerts.Data))
+	assert.Equal(t, updateCustomAlert, allalerts.Data[0].CreateCustomAlertBody)
+	// for _, createresp := range allalerts.Data {
+	err = sc.DeleteCustomSiteAlertByID(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// }
 }
 func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 	createCorpRuleBody := CreateCorpRuleBody{
@@ -577,6 +538,9 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 	}
 	assert.Equal(t, updateCorpRuleBody, updateResp.CreateCorpRuleBody)
 	readall, err := sc.GetAllCorpRules(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, 1, len(readall.Data))
 	assert.Equal(t, 1, readall.TotalCount)
 	assert.Equal(t, updateCorpRuleBody, readall.Data[0].CreateCorpRuleBody)
@@ -607,6 +571,9 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	assert.Equal(t, createCorpListBody, createresp.CreateListBody)
 
 	readresp, err := sc.GetCorpListByID(corp, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, createCorpListBody, readresp.CreateListBody)
 
 	updateCorpListBody := UpdateListBody{
@@ -633,6 +600,9 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	}
 	assert.Equal(t, updatedCorpListBody, updateresp.CreateListBody)
 	readall, err := sc.GetAllCorpLists(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, 1, len(readall.Data))
 	assert.Equal(t, updatedCorpListBody, readall.Data[0].CreateListBody)
 	err = sc.DeleteCorpListByID(corp, readresp.ID)
@@ -640,3 +610,99 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := "splunk-tescorp"
+	createSignalTagBody := CreateSignalTagBody{
+		ShortName:   "example-signal-tag",
+		Description: "An example of a custom signal tag",
+	}
+	createresp, err := sc.CreateCorpSignalTag(corp, createSignalTagBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	readresp, err := sc.GetCorpSignalTagByID(corp, createresp.TagName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createSignalTagBody, readresp.CreateSignalTagBody)
+	updateSignalTagBody := UpdateSignalTagBody{
+		Description: "An example of a custom signal tag - UPDATE",
+	}
+	updateresp, err := sc.UpdateCorpSignalTagByID(corp, createresp.TagName, updateSignalTagBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updatedSignalTagBody := CreateSignalTagBody{
+		ShortName:   "example-signal-tag",
+		Description: "An example of a custom signal tag - UPDATE",
+	}
+	assert.Equal(t, updatedSignalTagBody, updateresp.CreateSignalTagBody)
+	readall, err := sc.GetAllCorpSignalTags(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(readall.Data))
+	assert.Equal(t, updatedSignalTagBody, readall.Data[0].CreateSignalTagBody)
+	err = sc.DeleteCorpSignalTagByID(corp, readresp.TagName)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreateReadUpdateDeleteSignalTag(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := "splunk-tescorp"
+	site := "splunk-test"
+	createSignalTagBody := CreateSignalTagBody{
+		ShortName:   "example-signal-tag",
+		Description: "An example of a custom signal tag",
+	}
+	createresp, err := sc.CreateSiteSignalTag(corp, site, createSignalTagBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	readresp, err := sc.GetSiteSignalTagByID(corp, site, createresp.TagName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, createSignalTagBody, readresp.CreateSignalTagBody)
+	updateSignalTagBody := UpdateSignalTagBody{
+		Description: "An example of a custom signal tag - UPDATE",
+	}
+	updateresp, err := sc.UpdateSiteSignalTagByID(corp, site, createresp.TagName, updateSignalTagBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updatedSignalTagBody := CreateSignalTagBody{
+		ShortName:   "example-signal-tag",
+		Description: "An example of a custom signal tag - UPDATE",
+	}
+	assert.Equal(t, updatedSignalTagBody, updateresp.CreateSignalTagBody)
+	readall, err := sc.GetAllSiteSignalTags(corp, site)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(readall.Data))
+	assert.Equal(t, updatedSignalTagBody, readall.Data[0].CreateSignalTagBody)
+	err = sc.DeleteSiteSignalTagByID(corp, site, readresp.TagName)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// var (
+// 	buf    bytes.Buffer
+// 	logger = log.New(&buf, "INFO: ", log.Lshortfile)
+
+// 	infof = func(info string) {
+// 		logger.Output(2, info)
+// 	}
+// )
+
+// func TestLog(t *testing.T) {
+// 	infof("Hello world")
+
+// 	fmt.Print(&buf)
+// }

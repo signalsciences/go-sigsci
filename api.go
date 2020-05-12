@@ -529,38 +529,8 @@ func (sc *Client) UpdateSite(corpName, siteName string, body UpdateSiteBody) (Si
 	return site, nil
 }
 
-// CustomAlert contains the data for a custom alert
-type CustomAlert struct {
-	*CustomAlertBody
-	ID        string
-	Created   time.Time
-	CreatedBy string
-	Updated   time.Time
-}
-
-// customAlertsResponse is the response for the alerts endpoint
-type customAlertsResponse struct {
-	Data []CustomAlert
-}
-
-// ListCustomAlerts lists custom alerts for a given corp and site.
-func (sc Client) ListCustomAlerts(corpName, siteName string) ([]CustomAlert, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), "")
-	if err != nil {
-		return []CustomAlert{}, err
-	}
-
-	var car customAlertsResponse
-	err = json.Unmarshal(resp, &car)
-	if err != nil {
-		return []CustomAlert{}, err
-	}
-
-	return car.Data, nil
-}
-
-// CustomAlertBody is the body for creating a custom alert.
-type CustomAlertBody struct {
+// CreateCustomAlertBody is the body for creating a custom alert.
+type CreateCustomAlertBody struct {
 	TagName   string `json:"tagName"`
 	LongName  string `json:"longName"`
 	Interval  int    `json:"interval"`
@@ -569,66 +539,96 @@ type CustomAlertBody struct {
 	Action    string `json:"action"`
 }
 
-// CreateCustomAlert creates a custom alert.
-func (sc Client) CreateCustomAlert(corpName, siteName string, body CustomAlertBody) (CustomAlert, error) {
+//ResponseCustomAlertBody contains the data for a custom alert
+type ResponseCustomAlertBody struct {
+	CreateCustomAlertBody
+	ID        string
+	Created   time.Time
+	CreatedBy string
+	Updated   time.Time
+}
+
+// ResponseCustomAlertsBodyList is the response for the alerts endpoint
+type ResponseCustomAlertsBodyList struct {
+	Data []ResponseCustomAlertBody
+}
+
+// GetAllCustomSiteAlerts lists custom alerts for a given corp and site.
+func (sc Client) GetAllCustomSiteAlerts(corpName, siteName string) (ResponseCustomAlertsBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), "")
+	if err != nil {
+		return ResponseCustomAlertsBodyList{}, err
+	}
+
+	var car ResponseCustomAlertsBodyList
+	err = json.Unmarshal(resp, &car)
+	if err != nil {
+		return ResponseCustomAlertsBodyList{}, err
+	}
+
+	return car, nil
+}
+
+// CreateCustomSiteAlert creates a custom alert.
+func (sc Client) CreateCustomSiteAlert(corpName, siteName string, body CreateCustomAlertBody) (ResponseCustomAlertBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return CustomAlert{}, err
+		return ResponseCustomAlertBody{}, err
 	}
 
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), string(b))
 	if err != nil {
-		return CustomAlert{}, err
+		return ResponseCustomAlertBody{}, err
 	}
 
-	var c CustomAlert
+	var c ResponseCustomAlertBody
 	err = json.Unmarshal(resp, &c)
 	if err != nil {
-		return CustomAlert{}, err
+		return ResponseCustomAlertBody{}, err
 	}
 
 	return c, nil
 }
 
-// GetCustomAlert gets a custom alert by ID
-func (sc Client) GetCustomAlert(corpName, siteName, id string) (CustomAlert, error) {
+// GetCustomSiteAlertByID gets a custom alert by ID
+func (sc Client) GetCustomSiteAlertByID(corpName, siteName, id string) (ResponseCustomAlertBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), "")
 	if err != nil {
-		return CustomAlert{}, err
+		return ResponseCustomAlertBody{}, err
 	}
 
-	var ca CustomAlert
+	var ca ResponseCustomAlertBody
 	err = json.Unmarshal(resp, &ca)
 	if err != nil {
-		return CustomAlert{}, err
+		return ResponseCustomAlertBody{}, err
 	}
 
 	return ca, nil
 }
 
-// UpdateCustomAlert updates a custom alert by id.
-func (sc Client) UpdateCustomAlert(corpName, siteName, id string, body CustomAlertBody) (CustomAlert, error) {
+// UpdateCustomSiteAlertByID updates a custom alert by id.
+func (sc Client) UpdateCustomSiteAlertByID(corpName, siteName, id string, body CreateCustomAlertBody) (ResponseCustomAlertBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return CustomAlert{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), string(b)))
+		return ResponseCustomAlertBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), string(b)))
 	}
 
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), string(b))
 	if err != nil {
-		return CustomAlert{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+		return ResponseCustomAlertBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 
-	var c CustomAlert
+	var c ResponseCustomAlertBody
 	err = json.Unmarshal(resp, &c)
 	if err != nil {
-		return CustomAlert{}, err
+		return ResponseCustomAlertBody{}, err
 	}
 
 	return c, err
 }
 
-// DeleteCustomAlert deletes a custom alert.
-func (sc Client) DeleteCustomAlert(corpName, siteName, id string) error {
+// DeleteCustomSiteAlertByID deletes a custom alert.
+func (sc Client) DeleteCustomSiteAlertByID(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), "")
 
 	return err
@@ -2040,6 +2040,15 @@ func getResponseSiteRedactionBody(response []byte) (ResponseSiteRedactionBody, e
 	return responseBody, nil
 }
 
+//GetSiteRedactionByID get a site redaction by id
+func (sc Client) GetSiteRedactionByID(corpName, siteName, id string) (ResponseSiteRedactionBody, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), "")
+	if err != nil {
+		return ResponseSiteRedactionBody{}, err
+	}
+	return getResponseSiteRedactionBody(resp)
+}
+
 // UpdateSiteRedactionByID updates a site redaction and returns a response
 func (sc Client) UpdateSiteRedactionByID(corpName, siteName string, id string, body CreateSiteRedactionBody) (ResponseSiteRedactionBody, error) {
 	b, err := json.Marshal(body)
@@ -2049,15 +2058,6 @@ func (sc Client) UpdateSiteRedactionByID(corpName, siteName string, id string, b
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), string(b))
 	if err != nil {
 		return ResponseSiteRedactionBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
-	}
-	return getResponseSiteRedactionBody(resp)
-}
-
-//GetSiteRedactionByID get a site redaction by id
-func (sc Client) GetSiteRedactionByID(corpName, siteName, id string) (ResponseSiteRedactionBody, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), "")
-	if err != nil {
-		return ResponseSiteRedactionBody{}, err
 	}
 	return getResponseSiteRedactionBody(resp)
 }
@@ -2130,28 +2130,6 @@ func (sc *Client) CreateCorpRule(corpName string, body CreateCorpRuleBody) (Resp
 	return getResponseCorpRuleBody(resp)
 }
 
-// UpdateCorpRuleByID updates a rule and returns a response
-func (sc Client) UpdateCorpRuleByID(corpName, id string, body CreateCorpRuleBody) (ResponseCorpRuleBody, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
-	}
-	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), string(b))
-	if err != nil {
-		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
-	}
-	return getResponseCorpRuleBody(resp)
-}
-
-// DeleteCorpRuleByID deletes a rule and returns an error
-func (sc Client) DeleteCorpRuleByID(corpName, id string) error {
-	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), "")
-	if err != nil {
-		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
-	}
-	return nil
-}
-
 //GetCorpRuleByID get a site rule by id
 func (sc Client) GetCorpRuleByID(corpName, id string) (ResponseCorpRuleBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), "")
@@ -2174,6 +2152,29 @@ func (sc Client) GetAllCorpRules(corpName string) (ResponseCorpRuleBodyList, err
 	}
 	return responseRuleBodyList, nil
 }
+
+// UpdateCorpRuleByID updates a rule and returns a response
+func (sc Client) UpdateCorpRuleByID(corpName, id string, body CreateCorpRuleBody) (ResponseCorpRuleBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
+	}
+	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), string(b))
+	if err != nil {
+		return ResponseCorpRuleBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+	}
+	return getResponseCorpRuleBody(resp)
+}
+
+// DeleteCorpRuleByID deletes a rule and returns an error
+func (sc Client) DeleteCorpRuleByID(corpName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), "")
+	if err != nil {
+		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
+	}
+	return nil
+}
+
 func getResponseCorpRuleBody(response []byte) (ResponseCorpRuleBody, error) {
 	var responseCorpRule ResponseCorpRuleBody
 	err := json.Unmarshal(response, &responseCorpRule)
@@ -2194,28 +2195,6 @@ func (sc Client) CreateCorpList(corpName string, body CreateListBody) (ResponseL
 		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
 	}
 	return getResponseListBody(resp)
-}
-
-// UpdateCorpListByID updates a corp list
-func (sc Client) UpdateCorpListByID(corpName string, id string, body UpdateListBody) (ResponseListBody, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
-	}
-	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/lists/%s", corpName, id), string(b))
-	if err != nil {
-		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
-	}
-	return getResponseListBody(resp)
-}
-
-// DeleteCorpListByID deletes a rule and returns an error
-func (sc Client) DeleteCorpListByID(corpName string, id string) error {
-	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/lists/%s", corpName, id), "")
-	if err != nil {
-		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
-	}
-	return nil
 }
 
 // GetCorpListByID get corp list by ID
@@ -2240,8 +2219,183 @@ func (sc Client) GetAllCorpLists(corpName string) (ResponseListBodyList, error) 
 	}
 	return responseListBodyList, nil
 }
+
+// UpdateCorpListByID updates a corp list
+func (sc Client) UpdateCorpListByID(corpName string, id string, body UpdateListBody) (ResponseListBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
+	}
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/lists/%s", corpName, id), string(b))
+	if err != nil {
+		return ResponseListBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+	}
+	return getResponseListBody(resp)
+}
+
+// DeleteCorpListByID deletes a rule and returns an error
+func (sc Client) DeleteCorpListByID(corpName string, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/lists/%s", corpName, id), "")
+	if err != nil {
+		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
+	}
+	return nil
+}
+
 func logError(skip int, err error) error {
 	pc, _, line, _ := runtime.Caller(skip)
 	fn := runtime.FuncForPC(pc).Name()
 	return fmt.Errorf("[ERROR] %s:%d\t%s", fn, line, err.Error())
+}
+
+//CreateSignalTagBody create a signal tag
+type CreateSignalTagBody struct {
+	ShortName   string `json:"shortName,omitempty"`   //The display name of the signal tag
+	Description string `json:"description,omitempty"` //Optional signal tag description
+}
+
+//UpdateSignalTagBody update a signal tag
+type UpdateSignalTagBody struct {
+	Description string `json:"description,omitempty"` //Optional signal tag description
+}
+
+//ResponseSignalTagBody response singnal tag
+type ResponseSignalTagBody struct {
+	CreateSignalTagBody
+	TagName       string    `json:"tagName",omitempty"`  //The identifier for the signal tag
+	LongName      string    `json:"longName",omitempty"` //The display name of the signal tag - deprecated
+	Configurable  bool      `json:"configurable",omitempty"`
+	Informational bool      `json:"informational",omitempty"`
+	NeedsResponse bool      `json:"needsResponse",omitempty"`
+	CreatedBy     string    `json:"createdBy",omitempty"` //Email address of the user that created the resource
+	Created       time.Time `json:"created",omitempty"`   //Created RFC3339 date time
+}
+
+//ResponseSingnalTagBodyList response list
+type ResponseSingnalTagBodyList struct {
+	Data []ResponseSignalTagBody `json:"data"` //ResponseSignalTagBody
+}
+
+//CreateCorpSignalTag create signal tag
+func (sc Client) CreateCorpSignalTag(corpName string, body CreateSignalTagBody) (ResponseSignalTagBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
+	}
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/tags", corpName), string(b))
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+	}
+	return getResponseSignalTagBody(resp)
+}
+
+//GetCorpSignalTagByID get corp signal by id
+func (sc Client) GetCorpSignalTagByID(corpName string, id string) (ResponseSignalTagBody, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/tags/%s", corpName, id), "")
+	if err != nil {
+		return ResponseSignalTagBody{}, err
+	}
+	return getResponseSignalTagBody(resp)
+}
+
+//GetAllCorpSignalTags get all corp signals
+func (sc Client) GetAllCorpSignalTags(corpName string) (ResponseSingnalTagBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/tags", corpName), "")
+	if err != nil {
+		return ResponseSingnalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+	}
+	var responseSignalTagBodyList ResponseSingnalTagBodyList
+	err = json.Unmarshal(resp, &responseSignalTagBodyList)
+	if err != nil {
+		return ResponseSingnalTagBodyList{}, err
+	}
+	return responseSignalTagBodyList, nil
+}
+
+//UpdateCorpSignalTagByID update corp signal
+func (sc Client) UpdateCorpSignalTagByID(corpName string, id string, body UpdateSignalTagBody) (ResponseSignalTagBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
+	}
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/tags/%s", corpName, id), string(b))
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+	}
+	return getResponseSignalTagBody(resp)
+}
+
+//DeleteCorpSignalTagByID delete signal tag by id
+func (sc Client) DeleteCorpSignalTagByID(corpName string, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/tags/%s", corpName, id), "")
+	if err != nil {
+		return logError(1, fmt.Errorf("%s could not delete %s in %s", err.Error(), id, corpName))
+	}
+	return nil
+}
+func getResponseSignalTagBody(response []byte) (ResponseSignalTagBody, error) {
+	var responseBody ResponseSignalTagBody
+	err := json.Unmarshal(response, &responseBody)
+	if err != nil {
+		return ResponseSignalTagBody{}, err
+	}
+	return responseBody, nil
+}
+
+//CreateSiteSignalTag create signal tag
+func (sc Client) CreateSiteSignalTag(corpName, siteName string, body CreateSignalTagBody) (ResponseSignalTagBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
+	}
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/tags", corpName, siteName), string(b))
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+	}
+	return getResponseSignalTagBody(resp)
+}
+
+//GetSiteSignalTagByID get site signal by id
+func (sc Client) GetSiteSignalTagByID(corpName, siteName, id string) (ResponseSignalTagBody, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/tags/%s", corpName, siteName, id), "")
+	if err != nil {
+		return ResponseSignalTagBody{}, err
+	}
+	return getResponseSignalTagBody(resp)
+}
+
+//GetAllSiteSignalTags get all site signals
+func (sc Client) GetAllSiteSignalTags(corpName, siteName string) (ResponseSingnalTagBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/tags", corpName, siteName), "")
+	if err != nil {
+		return ResponseSingnalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+	}
+	var responseSignalTagBodyList ResponseSingnalTagBodyList
+	err = json.Unmarshal(resp, &responseSignalTagBodyList)
+	if err != nil {
+		return ResponseSingnalTagBodyList{}, err
+	}
+	return responseSignalTagBodyList, nil
+}
+
+//UpdateSiteSignalTagByID update site signal
+func (sc Client) UpdateSiteSignalTagByID(corpName, siteName, id string, body UpdateSignalTagBody) (ResponseSignalTagBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), body))
+	}
+	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/tags/%s", corpName, siteName, id), string(b))
+	if err != nil {
+		return ResponseSignalTagBody{}, logError(1, fmt.Errorf("%s with input %v", err.Error(), string(b)))
+	}
+	return getResponseSignalTagBody(resp)
+}
+
+//DeleteSiteSignalTagByID delete signal tag by id
+func (sc Client) DeleteSiteSignalTagByID(corpName, siteName, id string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/tags/%s", corpName, siteName, id), "")
+	if err != nil {
+		return logError(1, fmt.Errorf("%s could not delete %s in %s in %s", err.Error(), id, corpName, siteName))
+	}
+	return nil
 }
