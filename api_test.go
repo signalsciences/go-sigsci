@@ -407,13 +407,13 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 		Enabled:   true,
 		Action:    "flagged",
 	}
-	createresp, err := sc.CreateCustomSiteAlert(corp, site, createCustomAlert)
+	createresp, err := sc.CreateSiteCustomAlert(corp, site, createCustomAlert)
 	// t.Logf("%#v", createresp.Data)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, createCustomAlert, createresp.CreateCustomAlertBody)
-	readresp, err := sc.GetCustomSiteAlertByID(corp, site, createresp.ID)
+	readresp, err := sc.GetSiteCustomAlertByID(corp, site, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -427,7 +427,7 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 		Enabled:   true,
 		Action:    "flagged",
 	}
-	updateresp, err := sc.UpdateCustomSiteAlertByID(corp, site, readresp.ID, updateCustomAlert)
+	updateresp, err := sc.UpdateSiteCustomAlertByID(corp, site, readresp.ID, updateCustomAlert)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -441,7 +441,7 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	assert.Equal(t, 1, len(allalerts.Data))
 	assert.Equal(t, updateCustomAlert, allalerts.Data[0].CreateCustomAlertBody)
 	// for _, createresp := range allalerts.Data {
-	err = sc.DeleteCustomSiteAlertByID(corp, site, createresp.ID)
+	err = sc.DeleteSiteCustomAlertByID(corp, site, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

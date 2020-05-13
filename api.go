@@ -569,8 +569,8 @@ func (sc Client) GetAllCustomSiteAlerts(corpName, siteName string) (ResponseCust
 	return car, nil
 }
 
-// CreateCustomSiteAlert creates a custom alert.
-func (sc Client) CreateCustomSiteAlert(corpName, siteName string, body CreateCustomAlertBody) (ResponseCustomAlertBody, error) {
+// CreateSiteCustomAlert creates a custom alert.
+func (sc Client) CreateSiteCustomAlert(corpName, siteName string, body CreateCustomAlertBody) (ResponseCustomAlertBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
 		return ResponseCustomAlertBody{}, err
@@ -590,8 +590,8 @@ func (sc Client) CreateCustomSiteAlert(corpName, siteName string, body CreateCus
 	return c, nil
 }
 
-// GetCustomSiteAlertByID gets a custom alert by ID
-func (sc Client) GetCustomSiteAlertByID(corpName, siteName, id string) (ResponseCustomAlertBody, error) {
+// GetSiteCustomAlertByID gets a custom alert by ID
+func (sc Client) GetSiteCustomAlertByID(corpName, siteName, id string) (ResponseCustomAlertBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), "")
 	if err != nil {
 		return ResponseCustomAlertBody{}, err
@@ -606,8 +606,8 @@ func (sc Client) GetCustomSiteAlertByID(corpName, siteName, id string) (Response
 	return ca, nil
 }
 
-// UpdateCustomSiteAlertByID updates a custom alert by id.
-func (sc Client) UpdateCustomSiteAlertByID(corpName, siteName, id string, body CreateCustomAlertBody) (ResponseCustomAlertBody, error) {
+// UpdateSiteCustomAlertByID updates a custom alert by id.
+func (sc Client) UpdateSiteCustomAlertByID(corpName, siteName, id string, body CreateCustomAlertBody) (ResponseCustomAlertBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
 		return ResponseCustomAlertBody{}, logError(1, fmt.Errorf("%s with input %#v", err.Error(), string(b)))
@@ -627,8 +627,8 @@ func (sc Client) UpdateCustomSiteAlertByID(corpName, siteName, id string, body C
 	return c, err
 }
 
-// DeleteCustomSiteAlertByID deletes a custom alert.
-func (sc Client) DeleteCustomSiteAlertByID(corpName, siteName, id string) error {
+// DeleteSiteCustomAlertByID deletes a custom alert.
+func (sc Client) DeleteSiteCustomAlertByID(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), "")
 
 	return err
@@ -2262,13 +2262,13 @@ type UpdateSignalTagBody struct {
 //ResponseSignalTagBody response singnal tag
 type ResponseSignalTagBody struct {
 	CreateSignalTagBody
-	TagName       string    `json:"tagName",omitempty"`  //The identifier for the signal tag
-	LongName      string    `json:"longName",omitempty"` //The display name of the signal tag - deprecated
-	Configurable  bool      `json:"configurable",omitempty"`
-	Informational bool      `json:"informational",omitempty"`
-	NeedsResponse bool      `json:"needsResponse",omitempty"`
-	CreatedBy     string    `json:"createdBy",omitempty"` //Email address of the user that created the resource
-	Created       time.Time `json:"created",omitempty"`   //Created RFC3339 date time
+	TagName       string    `json:"tagName,omitempty"`  //The identifier for the signal tag
+	LongName      string    `json:"longName,omitempty"` //The display name of the signal tag - deprecated
+	Configurable  bool      `json:"configurable,omitempty"`
+	Informational bool      `json:"informational,omitempty"`
+	NeedsResponse bool      `json:"needsResponse,omitempty"`
+	CreatedBy     string    `json:"createdBy,omitempty"` //Email address of the user that created the resource
+	Created       time.Time `json:"created,omitempty"`   //Created RFC3339 date time
 }
 
 //ResponseSingnalTagBodyList response list
