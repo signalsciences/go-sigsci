@@ -400,12 +400,13 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	site := "splunk-test"
 
 	createCustomAlert := CreateCustomAlertBody{
-		TagName:   "SQLI",
-		LongName:  "Example Alert",
-		Interval:  1,
-		Threshold: 10,
-		Enabled:   true,
-		Action:    "flagged",
+		TagName:              "SQLI",
+		LongName:             "Example Alert",
+		BlockDurationSeconds: 1,
+		Interval:             1,
+		Threshold:            10,
+		Enabled:              true,
+		Action:               "flagged",
 	}
 	createresp, err := sc.CreateSiteCustomAlert(corp, site, createCustomAlert)
 	// t.Logf("%#v", createresp.Data)
@@ -420,12 +421,13 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	assert.Equal(t, createCustomAlert, readresp.CreateCustomAlertBody)
 
 	updateCustomAlert := CreateCustomAlertBody{
-		TagName:   "SQLI",
-		LongName:  "Example Alert Updated",
-		Interval:  10,
-		Threshold: 10,
-		Enabled:   true,
-		Action:    "flagged",
+		TagName:              "SQLI",
+		LongName:             "Example Alert Updated",
+		BlockDurationSeconds: 1,
+		Interval:             10,
+		Threshold:            10,
+		Enabled:              true,
+		Action:               "flagged",
 	}
 	updateresp, err := sc.UpdateSiteCustomAlertByID(corp, site, readresp.ID, updateCustomAlert)
 	if err != nil {

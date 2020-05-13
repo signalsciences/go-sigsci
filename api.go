@@ -531,21 +531,25 @@ func (sc *Client) UpdateSite(corpName, siteName string, body UpdateSiteBody) (Si
 
 // CreateCustomAlertBody is the body for creating a custom alert.
 type CreateCustomAlertBody struct {
-	TagName   string `json:"tagName"`
-	LongName  string `json:"longName"`
-	Interval  int    `json:"interval"`
-	Threshold int    `json:"threshold"`
-	Enabled   bool   `json:"enabled"`
-	Action    string `json:"action"`
+	TagName              string `json:"tagName,omitempty"`    //The name of the tag whose occurrences the alert is watching. Must match an existing tag
+	LongName             string `json:"longName,omitempty"`   //A human readable description of the alert. Must be between 3 and 25 characters.
+	Interval             int    `json:"interval"`             //The number of minutes of past traffic to examine. Must be 1, 10 or 60.
+	Threshold            int    `json:"threshold"`            //The number of occurrences of the tag in the interval needed to trigger the alert.
+	BlockDurationSeconds int    `json:"blockDurationSeconds"` //The number of seconds this alert is active.
+	Enabled              bool   `json:"enabled"`              //A flag to toggle this alert.
+	Action               string `json:"action,omitempty"`     //A flag that describes what happens when the alert is triggered. 'info' creates an incident in the dashboard. 'flagged' creates an incident and blocks traffic for 24 hours.
 }
 
 //ResponseCustomAlertBody contains the data for a custom alert
 type ResponseCustomAlertBody struct {
 	CreateCustomAlertBody
-	ID        string
-	Created   time.Time
-	CreatedBy string
-	Updated   time.Time
+	ID                string    `json:"id,omitempty"`      //Site-specific unique ID of the alert
+	Type              string    `json:"type,omitempty"`    //Type of alert (siteAlert, template, rateLimit, siteMetric)
+	SkipNotifications bool      `json:"skipNotifications"` //A flag to disable external notifications - slack, webhooks, emails, etc.
+	FieldName         string    `json:"fieldName,omitempty"`
+	CreatedBy         string    `json:"createdBy,omitempty"` //The email of the user that created the alert
+	Created           time.Time `json:"created,omitempty"`   //Created RFC3339 date time
+	Operator          string
 }
 
 // ResponseCustomAlertsBodyList is the response for the alerts endpoint
@@ -586,7 +590,6 @@ func (sc Client) CreateSiteCustomAlert(corpName, siteName string, body CreateCus
 	if err != nil {
 		return ResponseCustomAlertBody{}, err
 	}
-
 	return c, nil
 }
 
