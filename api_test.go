@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -94,17 +95,17 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 		Signal:        "SQLI",
 		Expiration:    "",
 		Conditions: []Condition{
-			Condition{
+			{
 				Type:     "single",
 				Field:    "ip",
 				Operator: "equals",
 				Value:    "1.2.3.4",
 			},
-			Condition{
+			{
 				Type:          "group",
 				GroupOperator: "any",
 				Conditions: []Condition{
-					Condition{
+					{
 						Type:     "single",
 						Field:    "ip",
 						Operator: "equals",
@@ -141,17 +142,17 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 		Signal:        "SQLI",
 		Expiration:    "",
 		Conditions: []Condition{
-			Condition{
+			{
 				Type:     "single",
 				Field:    "ip",
 				Operator: "equals",
 				Value:    "1.2.3.4",
 			},
-			Condition{
+			{
 				Type:          "group",
 				GroupOperator: "any",
 				Conditions: []Condition{
-					Condition{
+					{
 						Type:     "single",
 						Field:    "ip",
 						Operator: "equals",
@@ -161,7 +162,7 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 			},
 		},
 		Actions: []Action{
-			Action{
+			{
 				Type: "excludeSignal",
 			},
 		},
@@ -354,7 +355,7 @@ func TestCreateMultipleRedactions(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-func TestCreatListUpdateDeleteRedaction(t *testing.T) {
+func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := "splunk-tescorp"
 	site := "splunk-test"
@@ -436,7 +437,7 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	// t.Logf("%#v", updateresp)
 	assert.NotEqual(t, createCustomAlert, updateresp.CreateCustomAlertBody)
 	assert.Equal(t, updateCustomAlert, updateresp.CreateCustomAlertBody)
-	allalerts, err := sc.GetAllCustomSiteAlerts(corp, site)
+	allalerts, err := sc.GetAllSiteCustomAlerts(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -455,17 +456,17 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 		Type:          "signal",
 		GroupOperator: "all",
 		Conditions: []Condition{
-			Condition{
+			{
 				Type:     "single",
 				Field:    "ip",
 				Operator: "equals",
 				Value:    "1.2.3.4",
 			},
-			Condition{
+			{
 				Type:          "group",
 				GroupOperator: "any",
 				Conditions: []Condition{
-					Condition{
+					{
 						Type:     "single",
 						Field:    "ip",
 						Operator: "equals",
@@ -475,7 +476,7 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 			},
 		},
 		Actions: []Action{
-			Action{
+			{
 				Type: "excludeSignal",
 			},
 		},
@@ -504,17 +505,17 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 		Type:          "signal",
 		GroupOperator: "all",
 		Conditions: []Condition{
-			Condition{
+			{
 				Type:     "single",
 				Field:    "ip",
 				Operator: "equals",
 				Value:    "5.6.7.8",
 			},
-			Condition{
+			{
 				Type:          "group",
 				GroupOperator: "any",
 				Conditions: []Condition{
-					Condition{
+					{
 						Type:     "single",
 						Field:    "ip",
 						Operator: "equals",
@@ -524,7 +525,7 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 			},
 		},
 		Actions: []Action{
-			Action{
+			{
 				Type: "excludeSignal",
 			},
 		},
@@ -557,7 +558,7 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := "splunk-tescorp"
 	createCorpListBody := CreateListBody{
-		Name:        "My new list",
+		Name:        "My new List",
 		Type:        "ip",
 		Description: "Some IPs we are putting in a list",
 		Entries: []string{
@@ -571,6 +572,26 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, createCorpListBody, createresp.CreateListBody)
+	expectedCreateResponse := ResponseListBody{
+		CreateListBody: CreateListBody{
+			Name:        "My new List",
+			Type:        "ip",
+			Description: "Some IPs we are putting in a list",
+			Entries: []string{
+				"4.5.6.7",
+				"2.3.4.5",
+				"1.2.3.4",
+			},
+		},
+		ID:        "corp.my-new-list",
+		CreatedBy: "",
+		Created:   time.Time{}, //wall: 0x0, ext: 63725163294, loc: (*time.Location)(nil)},
+		Updated:   time.Time{}, //wall: 0x0, ext: 63725163294, loc: (*time.Location)(nil)},
+	}
+	createresp.Created = time.Time{}
+	createresp.Updated = time.Time{}
+	createresp.CreatedBy = ""
+	assert.Equal(t, expectedCreateResponse, createresp)
 
 	readresp, err := sc.GetCorpListByID(corp, createresp.ID)
 	if err != nil {
@@ -591,7 +612,7 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	}
 	assert.NotEqual(t, createCorpListBody, updateresp.CreateListBody)
 	updatedCorpListBody := CreateListBody{
-		Name:        "My new list",
+		Name:        "My new List",
 		Type:        "ip",
 		Description: "Some IPs we are updating in the list",
 		Entries: []string{
@@ -617,13 +638,30 @@ func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := "splunk-tescorp"
 	createSignalTagBody := CreateSignalTagBody{
-		ShortName:   "example-signal-tag",
+		ShortName:   "Example Signal Tag 1",
 		Description: "An example of a custom signal tag",
 	}
 	createresp, err := sc.CreateCorpSignalTag(corp, createSignalTagBody)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.Equal(t, createSignalTagBody, createresp.CreateSignalTagBody)
+	expectedCreateResponse := ResponseSignalTagBody{
+		CreateSignalTagBody: CreateSignalTagBody{
+			ShortName:   "Example Signal Tag 1",
+			Description: "An example of a custom signal tag",
+		},
+		TagName:       "corp.example-signal-tag-1",
+		LongName:      "Example Signal Tag 1",
+		Configurable:  false,
+		Informational: false,
+		NeedsResponse: false,
+		CreatedBy:     "",
+		Created:       time.Time{},
+	}
+	createresp.Created = time.Time{}
+	createresp.CreatedBy = ""
+	assert.Equal(t, expectedCreateResponse, createresp)
 	readresp, err := sc.GetCorpSignalTagByID(corp, createresp.TagName)
 	if err != nil {
 		t.Fatal(err)
@@ -637,7 +675,7 @@ func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 		t.Fatal(err)
 	}
 	updatedSignalTagBody := CreateSignalTagBody{
-		ShortName:   "example-signal-tag",
+		ShortName:   "Example Signal Tag 1",
 		Description: "An example of a custom signal tag - UPDATE",
 	}
 	assert.Equal(t, updatedSignalTagBody, updateresp.CreateSignalTagBody)
@@ -693,18 +731,3 @@ func TestCreateReadUpdateDeleteSignalTag(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-// var (
-// 	buf    bytes.Buffer
-// 	logger = log.New(&buf, "INFO: ", log.Lshortfile)
-
-// 	infof = func(info string) {
-// 		logger.Output(2, info)
-// 	}
-// )
-
-// func TestLog(t *testing.T) {
-// 	infof("Hello world")
-
-// 	fmt.Print(&buf)
-// }

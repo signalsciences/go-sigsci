@@ -557,8 +557,8 @@ type ResponseCustomAlertsBodyList struct {
 	Data []ResponseCustomAlertBody
 }
 
-// GetAllCustomSiteAlerts lists custom alerts for a given corp and site.
-func (sc Client) GetAllCustomSiteAlerts(corpName, siteName string) (ResponseCustomAlertsBodyList, error) {
+// GetAllSiteCustomAlerts lists custom alerts for a given corp and site.
+func (sc Client) GetAllSiteCustomAlerts(corpName, siteName string) (ResponseCustomAlertsBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), "")
 	if err != nil {
 		return ResponseCustomAlertsBodyList{}, err
@@ -2274,8 +2274,8 @@ type ResponseSignalTagBody struct {
 	Created       time.Time `json:"created,omitempty"`   //Created RFC3339 date time
 }
 
-//ResponseSingnalTagBodyList response list
-type ResponseSingnalTagBodyList struct {
+//ResponseSignalTagBodyList response list
+type ResponseSignalTagBodyList struct {
 	Data []ResponseSignalTagBody `json:"data"` //ResponseSignalTagBody
 }
 
@@ -2302,15 +2302,15 @@ func (sc Client) GetCorpSignalTagByID(corpName string, id string) (ResponseSigna
 }
 
 //GetAllCorpSignalTags get all corp signals
-func (sc Client) GetAllCorpSignalTags(corpName string) (ResponseSingnalTagBodyList, error) {
+func (sc Client) GetAllCorpSignalTags(corpName string) (ResponseSignalTagBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/tags", corpName), "")
 	if err != nil {
-		return ResponseSingnalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseSignalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
 	}
-	var responseSignalTagBodyList ResponseSingnalTagBodyList
+	var responseSignalTagBodyList ResponseSignalTagBodyList
 	err = json.Unmarshal(resp, &responseSignalTagBodyList)
 	if err != nil {
-		return ResponseSingnalTagBodyList{}, err
+		return ResponseSignalTagBodyList{}, err
 	}
 	return responseSignalTagBodyList, nil
 }
@@ -2368,15 +2368,15 @@ func (sc Client) GetSiteSignalTagByID(corpName, siteName, id string) (ResponseSi
 }
 
 //GetAllSiteSignalTags get all site signals
-func (sc Client) GetAllSiteSignalTags(corpName, siteName string) (ResponseSingnalTagBodyList, error) {
+func (sc Client) GetAllSiteSignalTags(corpName, siteName string) (ResponseSignalTagBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/tags", corpName, siteName), "")
 	if err != nil {
-		return ResponseSingnalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseSignalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
 	}
-	var responseSignalTagBodyList ResponseSingnalTagBodyList
+	var responseSignalTagBodyList ResponseSignalTagBodyList
 	err = json.Unmarshal(resp, &responseSignalTagBodyList)
 	if err != nil {
-		return ResponseSingnalTagBodyList{}, err
+		return ResponseSignalTagBodyList{}, err
 	}
 	return responseSignalTagBodyList, nil
 }
