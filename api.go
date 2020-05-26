@@ -561,7 +561,7 @@ type ResponseCustomAlertsBodyList struct {
 func (sc Client) GetAllSiteCustomAlerts(corpName, siteName string) (ResponseCustomAlertsBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts", corpName, siteName), "")
 	if err != nil {
-		return ResponseCustomAlertsBodyList{}, err
+		return ResponseCustomAlertsBodyList{}, logError(1, fmt.Errorf("%s with %s %s ", err.Error(), corpName, siteName))
 	}
 
 	var car ResponseCustomAlertsBodyList
@@ -1868,7 +1868,7 @@ func (sc *Client) GetAllSiteRules(corpName, siteName string) (ResponseSiteRuleBo
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), "")
 
 	if err != nil {
-		return ResponseSiteRuleBodyList{}, err
+		return ResponseSiteRuleBodyList{}, logError(1, fmt.Errorf("%s with %s %s ", err.Error(), corpName, siteName))
 	}
 
 	var responseRulesList ResponseSiteRuleBodyList
@@ -1972,7 +1972,7 @@ func (sc Client) GetSiteListByID(corpName, siteName string, id string) (Response
 func (sc Client) GetAllSiteLists(corpName, siteName string) (ResponseListBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/lists", corpName, siteName), "")
 	if err != nil {
-		return ResponseListBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseListBodyList{}, logError(1, fmt.Errorf("%s with %s %s ", err.Error(), corpName, siteName))
 	}
 	var responseListBodyList ResponseListBodyList
 	err = json.Unmarshal(resp, &responseListBodyList)
@@ -2079,7 +2079,7 @@ func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteR
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions", corpName, siteName), "")
 
 	if err != nil {
-		return ResponseSiteRedactionBodyList{}, err
+		return ResponseSiteRedactionBodyList{}, logError(1, fmt.Errorf("%s with %s %s ", err.Error(), corpName, siteName))
 	}
 
 	var responseRulesList ResponseSiteRuleBodyList
@@ -2146,7 +2146,7 @@ func (sc Client) GetCorpRuleByID(corpName, id string) (ResponseCorpRuleBody, err
 func (sc Client) GetAllCorpRules(corpName string) (ResponseCorpRuleBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/rules", corpName), "")
 	if err != nil {
-		return ResponseCorpRuleBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseCorpRuleBodyList{}, logError(1, fmt.Errorf("%s with %s", err.Error(), corpName))
 	}
 	var responseRuleBodyList ResponseCorpRuleBodyList
 	err = json.Unmarshal(resp, &responseRuleBodyList)
@@ -2213,7 +2213,7 @@ func (sc Client) GetCorpListByID(corpName string, id string) (ResponseListBody, 
 func (sc Client) GetAllCorpLists(corpName string) (ResponseListBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/lists", corpName), "")
 	if err != nil {
-		return ResponseListBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseListBodyList{}, logError(1, fmt.Errorf("%s with %s", err.Error(), corpName))
 	}
 	var responseListBodyList ResponseListBodyList
 	err = json.Unmarshal(resp, &responseListBodyList)
@@ -2305,7 +2305,7 @@ func (sc Client) GetCorpSignalTagByID(corpName string, id string) (ResponseSigna
 func (sc Client) GetAllCorpSignalTags(corpName string) (ResponseSignalTagBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/tags", corpName), "")
 	if err != nil {
-		return ResponseSignalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseSignalTagBodyList{}, logError(1, fmt.Errorf("%s with %s ", err.Error(), corpName))
 	}
 	var responseSignalTagBodyList ResponseSignalTagBodyList
 	err = json.Unmarshal(resp, &responseSignalTagBodyList)
@@ -2371,7 +2371,7 @@ func (sc Client) GetSiteSignalTagByID(corpName, siteName, id string) (ResponseSi
 func (sc Client) GetAllSiteSignalTags(corpName, siteName string) (ResponseSignalTagBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/tags", corpName, siteName), "")
 	if err != nil {
-		return ResponseSignalTagBodyList{}, logError(1, fmt.Errorf("%s", err.Error()))
+		return ResponseSignalTagBodyList{}, logError(1, fmt.Errorf("%s with %s %s ", err.Error(), corpName, siteName))
 	}
 	var responseSignalTagBodyList ResponseSignalTagBodyList
 	err = json.Unmarshal(resp, &responseSignalTagBodyList)
