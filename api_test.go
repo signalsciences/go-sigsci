@@ -2,22 +2,26 @@ package sigsci
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 type TestCreds struct {
 	email string
 	token string
+	corp  string
+	site  string
 }
 
 var testcreds = TestCreds{
 	email: os.Getenv("SIGSCI_EMAIL"),
-	token: os.Getenv("SIGSCI_TOKEN"), //"6b62cee3-bd06-487e-9283-d565078b7a8f",
+	token: os.Getenv("SIGSCI_TOKEN"),
+	corp:  os.Getenv("SIGSCI_CORP"),
+	site:  os.Getenv("SIGSCI_SITE"),
 }
 
 func ExampleClient_InviteUser() {
@@ -29,10 +33,10 @@ func ExampleClient_InviteUser() {
 	}
 
 	invite := NewCorpUserInvite(RoleCorpUser, []SiteMembership{
-		NewSiteMembership("www.mysite.com", RoleSiteOwner),
+		NewSiteMembership(testcreds.site, RoleSiteOwner),
 	})
 
-	_, err = sc.InviteUser("testcorp", "test@test.net", invite)
+	_, err = sc.InviteUser(testcreds.corp, "test@test.net", invite)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,33 +60,95 @@ func TestGoUserTokenClient(t *testing.T) {
 			if corps, err := sc.ListCorps(); err != nil {
 				t.Fatal(err)
 			} else {
-				assert.Equal(t, "splunk-testcorp", corps[0].Name)
+				if testcreds.corp != corps[0].Name {
+					t.Errorf("Corp ")
+				}
 			}
 		})
 	}
 }
-func TestCreateDeleteSite(t *testing.T) {
-	t.Skip()
+func TestCreateUpdateDeleteSite(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-testcorp"
+	corp := testcreds.corp
 
 	siteBody := CreateSiteBody{
-		Name:                 "janitha-test-site",
-		DisplayName:          "Janitha Test Site",
-		AgentLevel:           "Log",
-		BlockHTTPCode:        406,
-		BlockDurationSeconds: 86400,
+		Name:                 "test-site",
+		DisplayName:          "Test Site",
+		AgentLevel:           "block",
+		BlockHTTPCode:        406,   // TODO test non-default value once api supports it
+		BlockDurationSeconds: 86400, // TODO test non-default value once api supports it
 		AgentAnonMode:        "",
 	}
 	siteresponse, err := sc.CreateSite(corp, siteBody)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, "Janitha Test Site", siteresponse.DisplayName)
+	if "Test Site" != siteresponse.DisplayName {
+		t.Errorf("Displayname got %s expected %s", siteresponse.DisplayName, "Test Site")
+	}
+	if "block" != siteresponse.AgentLevel {
+		t.Errorf("AgentLevel got %s expected %s", siteresponse.AgentLevel, "block")
+	}
+	if 406 != siteresponse.BlockHTTPCode {
+		t.Errorf("BlockHTTPCode got %d expected %d", siteresponse.BlockHTTPCode, 406)
+	}
+	if 86400 != siteresponse.BlockDurationSeconds {
+		t.Errorf("BlockDurationSeconds got %d expected %d", siteresponse.BlockDurationSeconds, 86400)
+	}
+	if "" != siteresponse.AgentAnonMode {
+		t.Errorf("AgentAnonMode got %s expected %s", siteresponse.AgentAnonMode, "")
+	}
+
+	updateSite, err := sc.UpdateSite(corp, siteBody.Name, UpdateSiteBody{
+		DisplayName:          "Test Site 2",
+		AgentLevel:           "off",
+		BlockDurationSeconds: 86402,
+		BlockHTTPCode:        406, // TODO increment this value once api supports it
+		AgentAnonMode:        "EU",
+	})
+
+	if "Test Site 2" != updateSite.DisplayName {
+		t.Errorf("Displayname got %s expected %s", updateSite.DisplayName, "Test Site 2")
+	}
+	if "off" != updateSite.AgentLevel {
+		t.Errorf("AgentLevel got %s expected %s", updateSite.AgentLevel, "off")
+	}
+	if 406 != updateSite.BlockHTTPCode {
+		t.Errorf("BlockHTTPCode got %d expected %d", updateSite.BlockHTTPCode, 406)
+	}
+	if 86402 != updateSite.BlockDurationSeconds {
+		t.Errorf("BlockDurationSeconds got %d expected %d", updateSite.BlockDurationSeconds, 86402)
+	}
+	if "EU" != updateSite.AgentAnonMode {
+		t.Errorf("AgentAnonMode got %s expected %s", updateSite.AgentAnonMode, "EU")
+	}
+
 	err = sc.DeleteSite(corp, siteBody.Name)
 	if err != nil {
-		t.Logf("%#v", err)
+		t.Errorf("%#v", err)
 	}
+}
+
+func compareSiteRuleBody(sr1, sr2 CreateSiteRuleBody) bool {
+	if sr1.Enabled != sr2.Enabled {
+		return false
+	}
+	if sr1.Reason != sr2.Reason {
+		return false
+	}
+	if sr1.Type != sr2.Type {
+		return false
+	}
+	if sr1.Signal != sr2.Signal {
+		return false
+	}
+	if sr1.Expiration != sr2.Expiration {
+		return false
+	}
+	if sr1.GroupOperator != sr2.GroupOperator {
+		return false
+	}
+	return true
 }
 
 func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
@@ -121,19 +187,23 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 		},
 	}
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 	createResp, err := sc.CreateSiteRule(corp, site, createSiteRulesBody)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRulesBody, createResp.CreateSiteRuleBody)
+	if !compareSiteRuleBody(createSiteRulesBody, createResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRulesgot: %v expected %v", createResp, createSiteRulesBody)
+	}
 
 	readResp, err := sc.GetSiteRuleByID(corp, site, createResp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRulesBody, readResp.CreateSiteRuleBody)
+	if !compareSiteRuleBody(createSiteRulesBody, readResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRulesgot: %v expected %v", createResp, createSiteRulesBody)
+	}
 	updateSiteRuleBody := CreateSiteRuleBody{
 		Type:          "signal",
 		GroupOperator: "all",
@@ -171,15 +241,23 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, updateSiteRuleBody, updateResp.CreateSiteRuleBody)
+	if !compareSiteRuleBody(updateSiteRuleBody, updateResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRulesgot: %v expected %v", createResp, createSiteRulesBody)
+	}
 
 	readall, err := sc.GetAllSiteRules(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, 1, readall.TotalCount)
-	assert.Equal(t, updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody)
+	if len(readall.Data) != 1 {
+		t.Error()
+	}
+	if readall.TotalCount != 1 {
+		t.Error()
+	}
+	if !compareSiteRuleBody(updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody) {
+
+	}
 
 	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
 	if err != nil {
@@ -188,13 +266,13 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 }
 
 func TestUnMarshalListData(t *testing.T) {
-	resp := []byte(`{
+	resp := []byte(fmt.Sprintf(`{
 		"totalCount": 1,
 		"data": [
 		  {
 			"id": "5e84ec28bf612801c7f0f109",
 			"siteNames": [
-			  "splunk-test"
+			  "%s"
 			],
 			"type": "signal",
 			"enabled": true,
@@ -215,33 +293,37 @@ func TestUnMarshalListData(t *testing.T) {
 			"signal": "SQLI",
 			"reason": "Example site rule",
 			"expiration": "",
-			"createdBy": "janitha.jayaweera@gmail.com",
+			"createdBy": "test@gmail.com",
 			"created": "2020-04-01T19:31:52Z",
 			"updated": "2020-04-01T19:31:52Z"
 		  }
 		]
-	  }`)
+	  }`, testcreds.site))
 
 	var responseRulesList ResponseSiteRuleBodyList
 	err := json.Unmarshal(resp, &responseRulesList)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, responseRulesList.TotalCount)
-	assert.Equal(t, 1, len(responseRulesList.Data))
-	assert.Equal(t, "5e84ec28bf612801c7f0f109", responseRulesList.Data[0].ID)
+	if responseRulesList.TotalCount != 1 {
+		t.Error()
+	}
+	if len(responseRulesList.Data) != 1 {
+		t.Error()
+	}
+	if responseRulesList.Data[0].ID != "5e84ec28bf612801c7f0f109" {
+		t.Error()
+	}
 }
 
 func TestDeleteAllSiteRules(t *testing.T) {
-	t.SkipNow()
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 	respList, err := sc.GetAllSiteRules(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// assert.Equal(t, 0, len(respList))
 	for _, rule := range respList.Data {
 		sc.DeleteSiteRuleByID(corp, site, rule.ID)
 	}
@@ -249,13 +331,31 @@ func TestDeleteAllSiteRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 0, len(respList.Data))
+	if len(respList.Data) != 0 {
+		t.Error()
+	}
+}
+
+func compareSiteListBody(sl1, sl2 CreateListBody) bool {
+	if sl1.Type != sl2.Type {
+		return false
+	}
+	if sl1.Description != sl2.Description {
+		return false
+	}
+	if sl1.Name != sl2.Name {
+		return false
+	}
+	if len(sl1.Entries) != len(sl2.Entries) {
+		return false
+	}
+	return true
 }
 
 func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 	createSiteListBody := CreateListBody{
 		Name:        "My new list",
 		Type:        "ip",
@@ -270,10 +370,14 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteListBody, createresp.CreateListBody)
+	if !reflect.DeepEqual(createSiteListBody, createresp.CreateListBody) {
+		t.Error("Site list body not equal after create")
+	}
 
 	readresp, err := sc.GetSiteListByID(corp, site, createresp.ID)
-	assert.Equal(t, createSiteListBody, readresp.CreateListBody)
+	if !reflect.DeepEqual(createSiteListBody, readresp.CreateListBody) {
+		t.Error("Site list body not equal after read")
+	}
 
 	updateSiteListBody := UpdateListBody{
 		Description: "Some IPs we are updating in the list",
@@ -286,7 +390,7 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEqual(t, createSiteListBody, updateresp.CreateListBody)
+
 	updatedSiteListBody := CreateListBody{
 		Name:        "My new list",
 		Type:        "ip",
@@ -297,10 +401,16 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 			"3.4.5.6",
 		},
 	}
-	assert.Equal(t, updatedSiteListBody, updateresp.CreateListBody)
+	if !reflect.DeepEqual(updatedSiteListBody, updateresp.CreateListBody) {
+		t.Error("Site list body not equal")
+	}
 	readall, err := sc.GetAllSiteLists(corp, site)
-	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, updatedSiteListBody, readall.Data[0].CreateListBody)
+	if len(readall.Data) != 1 {
+		t.Error()
+	}
+	if !reflect.DeepEqual(updatedSiteListBody, readall.Data[0].CreateListBody) {
+		t.Error("Site list body not equal")
+	}
 	err = sc.DeleteSiteListByID(corp, site, readresp.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -309,8 +419,8 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 
 func TestCreateMultipleRedactions(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 
 	createSiteRedactionBody := CreateSiteRedactionBody{
 		Field:         "privatefield",
@@ -320,7 +430,9 @@ func TestCreateMultipleRedactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRedactionBody, createresp.CreateSiteRedactionBody)
+	if !reflect.DeepEqual(createSiteRedactionBody, createresp.CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after create")
+	}
 
 	createSiteRedactionBody2 := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -330,7 +442,9 @@ func TestCreateMultipleRedactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRedactionBody2, createresp2.CreateSiteRedactionBody)
+	if !reflect.DeepEqual(createSiteRedactionBody2, createresp2.CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after create")
+	}
 
 	createSiteRedactionBody3 := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -340,7 +454,9 @@ func TestCreateMultipleRedactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSiteRedactionBody3, createresp3.CreateSiteRedactionBody)
+	if !reflect.DeepEqual(createSiteRedactionBody3, createresp3.CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after create")
+	}
 
 	err = sc.DeleteSiteRedactionByID(corp, site, createresp.ID)
 	if err != nil {
@@ -357,8 +473,8 @@ func TestCreateMultipleRedactions(t *testing.T) {
 }
 func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 
 	createSiteRedactionBody := CreateSiteRedactionBody{
 		Field:         "privatefield",
@@ -370,10 +486,14 @@ func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, createSiteRedactionBody, createresp.CreateSiteRedactionBody)
+	if !reflect.DeepEqual(createSiteRedactionBody, createresp.CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after create")
+	}
 
 	readresp, err := sc.GetSiteRedactionByID(corp, site, createresp.ID)
-	assert.Equal(t, createSiteRedactionBody, readresp.CreateSiteRedactionBody)
+	if !reflect.DeepEqual(createSiteRedactionBody, readresp.CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after read")
+	}
 
 	updateSiteRedactionBody := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -383,12 +503,16 @@ func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEqual(t, createSiteRedactionBody, updatedresp.CreateSiteRedactionBody)
-	assert.Equal(t, updateSiteRedactionBody, updatedresp.CreateSiteRedactionBody)
+	if !reflect.DeepEqual(updateSiteRedactionBody, updatedresp.CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after update")
+	}
 	readall, err := sc.GetAllSiteRedactions(corp, site)
-	assert.Equal(t, 1, len(readall.Data))
-	// assert.Equal(t, 1, readall.TotalCount)
-	assert.Equal(t, updateSiteRedactionBody, readall.Data[0].CreateSiteRedactionBody)
+	if len(readall.Data) != 1 {
+		t.Error("incorrect number of site redactions, make sure you didnt add any manually")
+	}
+	if !reflect.DeepEqual(updateSiteRedactionBody, readall.Data[0].CreateSiteRedactionBody) {
+		t.Error("Site redaction body not equal after update")
+	}
 	err = sc.DeleteSiteRedactionByID(corp, site, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -397,62 +521,140 @@ func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 
 func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 
-	createCustomAlert := CreateCustomAlertBody{
-		TagName:              "SQLI",
-		LongName:             "Example Alert",
-		BlockDurationSeconds: 1,
-		Interval:             1,
-		Threshold:            10,
-		Enabled:              true,
-		Action:               "flagged",
+	createCustomAlert := CustomAlertBody{
+		TagName:   "SQLI",
+		LongName:  "Example Alert",
+		Interval:  1,
+		Threshold: 10,
+		Enabled:   true,
+		Action:    "flagged",
 	}
-	createresp, err := sc.CreateSiteCustomAlert(corp, site, createCustomAlert)
-	// t.Logf("%#v", createresp.Data)
+	createresp, err := sc.CreateCustomAlert(corp, site, createCustomAlert)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createCustomAlert, createresp.CreateCustomAlertBody)
-	readresp, err := sc.GetSiteCustomAlertByID(corp, site, createresp.ID)
-	if err != nil {
-		t.Fatal(err)
+	// set unknown fields just for equality
+	if createCustomAlert.TagName != createresp.TagName {
+		t.Error("tag names not equal")
 	}
-	assert.Equal(t, createCustomAlert, readresp.CreateCustomAlertBody)
+	if createCustomAlert.LongName != createresp.LongName {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Interval != createresp.Interval {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Threshold != createresp.Threshold {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Enabled != createresp.Enabled {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Action != createresp.Action {
+		t.Error("tag names not equal")
+	}
 
-	updateCustomAlert := CreateCustomAlertBody{
-		TagName:              "SQLI",
-		LongName:             "Example Alert Updated",
-		BlockDurationSeconds: 1,
-		Interval:             10,
-		Threshold:            10,
-		Enabled:              true,
-		Action:               "flagged",
-	}
-	updateresp, err := sc.UpdateSiteCustomAlertByID(corp, site, readresp.ID, updateCustomAlert)
+	readresp, err := sc.GetCustomAlert(corp, site, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("%#v", updateresp)
-	assert.NotEqual(t, createCustomAlert, updateresp.CreateCustomAlertBody)
-	assert.Equal(t, updateCustomAlert, updateresp.CreateCustomAlertBody)
-	allalerts, err := sc.GetAllSiteCustomAlerts(corp, site)
+	if createCustomAlert.TagName != readresp.TagName {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.LongName != readresp.LongName {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Interval != readresp.Interval {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Threshold != readresp.Threshold {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Enabled != readresp.Enabled {
+		t.Error("tag names not equal")
+	}
+	if createCustomAlert.Action != readresp.Action {
+		t.Error("tag names not equal")
+	}
+
+	updateCustomAlert := CustomAlertBody{
+		TagName:   "SQLI",
+		LongName:  "Example Alert Updated",
+		Interval:  10,
+		Threshold: 10,
+		Enabled:   true,
+		Action:    "flagged",
+	}
+	updateResp, err := sc.UpdateCustomAlert(corp, site, readresp.ID, updateCustomAlert)
+
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(allalerts.Data))
-	assert.Equal(t, updateCustomAlert, allalerts.Data[0].CreateCustomAlertBody)
-	// for _, createresp := range allalerts.Data {
-	err = sc.DeleteSiteCustomAlertByID(corp, site, createresp.ID)
+
+	if updateCustomAlert.TagName != updateResp.TagName {
+		t.Error("tag names not equal")
+	}
+	if updateCustomAlert.LongName != updateResp.LongName {
+		t.Error("tag names not equal")
+	}
+	if updateCustomAlert.Interval != updateResp.Interval {
+		t.Error("tag names not equal")
+	}
+	if updateCustomAlert.Threshold != updateResp.Threshold {
+		t.Error("tag names not equal")
+	}
+	if updateCustomAlert.Enabled != updateResp.Enabled {
+		t.Error("tag names not equal")
+	}
+	if updateCustomAlert.Action != updateResp.Action {
+		t.Error("tag names not equal")
+	}
+
+	allalerts, err := sc.ListCustomAlerts(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// }
+	if len(allalerts) != 1 {
+		t.Error("alerts length incorrect. make sure none we added outside")
+	}
+	if updateCustomAlert.TagName != allalerts[0].TagName {
+		t.Error("tag names not equal")
+	}
+	if updateCustomAlert.LongName != allalerts[0].LongName {
+		t.Error("long names not equal")
+	}
+	if updateCustomAlert.Interval != allalerts[0].Interval {
+		t.Error("interval not equal")
+	}
+	if updateCustomAlert.Threshold != allalerts[0].Threshold {
+		t.Error("threshold not equal")
+	}
+	if updateCustomAlert.Enabled != allalerts[0].Enabled {
+		t.Error("enbled not equal")
+	}
+	if updateCustomAlert.Action != allalerts[0].Action {
+		t.Error("action not equal")
+	}
+
+	err = sc.DeleteCustomAlert(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
+
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	// Get initial counts
+	initialCorps, err := sc.GetAllCorpRules(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	createCorpRuleBody := CreateCorpRuleBody{
-		SiteNames:     []string{"splunk-test"},
+		SiteNames:     []string{testcreds.site},
 		Type:          "signal",
 		GroupOperator: "all",
 		Conditions: []Condition{
@@ -486,22 +688,23 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 		Expiration: "",
 		CorpScope:  "specificSites",
 	}
-	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
 	createResp, err := sc.CreateCorpRule(corp, createCorpRuleBody)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("%#v", createResp.CreateCorpRuleBody)
-	assert.Equal(t, createCorpRuleBody, createResp.CreateCorpRuleBody)
+	if !reflect.DeepEqual(createCorpRuleBody, createResp.CreateCorpRuleBody) {
+		t.Error("Corp rule body not equal after create")
+	}
 
 	readResp, err := sc.GetCorpRuleByID(corp, createResp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, readResp, createResp)
+	if !reflect.DeepEqual(readResp, createResp) {
+		t.Error("Corp rule body not equal after read")
+	}
 	updateCorpRuleBody := CreateCorpRuleBody{
-		SiteNames:     []string{"splunk-test"},
+		SiteNames:     []string{testcreds.site},
 		Type:          "signal",
 		GroupOperator: "all",
 		Conditions: []Condition{
@@ -539,24 +742,58 @@ func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, updateCorpRuleBody, updateResp.CreateCorpRuleBody)
+	if !reflect.DeepEqual(updateCorpRuleBody, updateResp.CreateCorpRuleBody) {
+		t.Error("Corp rule body not equal after update")
+	}
 	readall, err := sc.GetAllCorpRules(corp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, 1, readall.TotalCount)
-	assert.Equal(t, updateCorpRuleBody, readall.Data[0].CreateCorpRuleBody)
+	if len(initialCorps.Data)+1 != len(readall.Data) {
+		t.Error()
+	}
+	if initialCorps.TotalCount+1 != readall.TotalCount {
+		t.Error()
+	}
+	if !reflect.DeepEqual(updateCorpRuleBody, readall.Data[0].CreateCorpRuleBody) {
+		t.Error("Corp rule body not equal after get all. make sure nothing was added externally")
+	}
 	err = sc.DeleteCorpRuleByID(corp, createResp.ID)
 
 	if err != nil {
 		t.Fatal(err)
 	}
+	readall, err = sc.GetAllCorpRules(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(initialCorps.Data) != len(readall.Data) {
+		t.Error()
+	}
+	if initialCorps.TotalCount != readall.TotalCount {
+		t.Error()
+	}
+}
+
+func compareCorpListBody(cl1, cl2 CreateListBody) bool {
+	if cl1.Name != cl2.Name {
+		return false
+	}
+	if cl1.Type != cl2.Type {
+		return false
+	}
+	if cl1.Description != cl2.Description {
+		return false
+	}
+	if len(cl1.Entries) != len(cl2.Entries) {
+		return false
+	}
+	return true
 }
 
 func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
+	corp := testcreds.corp
 	createCorpListBody := CreateListBody{
 		Name:        "My new List",
 		Type:        "ip",
@@ -571,7 +808,10 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createCorpListBody, createresp.CreateListBody)
+	if !compareCorpListBody(createCorpListBody, createresp.CreateListBody) {
+		t.Error("corp list not equal after create")
+	}
+	now := time.Now()
 	expectedCreateResponse := ResponseListBody{
 		CreateListBody: CreateListBody{
 			Name:        "My new List",
@@ -585,19 +825,23 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 		},
 		ID:        "corp.my-new-list",
 		CreatedBy: "",
-		Created:   time.Time{}, //wall: 0x0, ext: 63725163294, loc: (*time.Location)(nil)},
-		Updated:   time.Time{}, //wall: 0x0, ext: 63725163294, loc: (*time.Location)(nil)},
+		Created:   now,
+		Updated:   now,
 	}
-	createresp.Created = time.Time{}
-	createresp.Updated = time.Time{}
+	createresp.Created = now
+	createresp.Updated = now
 	createresp.CreatedBy = ""
-	assert.Equal(t, expectedCreateResponse, createresp)
+	if !reflect.DeepEqual(expectedCreateResponse, createresp) {
+		t.Error("corp list not equal after get")
+	}
 
 	readresp, err := sc.GetCorpListByID(corp, createresp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createCorpListBody, readresp.CreateListBody)
+	if !compareCorpListBody(createCorpListBody, readresp.CreateListBody) {
+		t.Error("corp list not equal after read")
+	}
 
 	updateCorpListBody := UpdateListBody{
 		Description: "Some IPs we are updating in the list",
@@ -608,9 +852,24 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 	}
 	updateresp, err := sc.UpdateCorpListByID(corp, readresp.ID, updateCorpListBody)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
-	assert.NotEqual(t, createCorpListBody, updateresp.CreateListBody)
+
+	if updateCorpListBody.Description != updateresp.Description {
+		t.Error("descriptions not equal after update")
+	}
+	hasNewEntry := false
+	for _, e := range updateresp.Entries {
+		if e == "4.5.6.7" {
+			t.Fail()
+		}
+		if e == "3.4.5.6" {
+			hasNewEntry = true
+		}
+	}
+	if !hasNewEntry {
+		t.Error()
+	}
 	updatedCorpListBody := CreateListBody{
 		Name:        "My new List",
 		Type:        "ip",
@@ -621,13 +880,19 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 			"3.4.5.6",
 		},
 	}
-	assert.Equal(t, updatedCorpListBody, updateresp.CreateListBody)
+	if !compareCorpListBody(updatedCorpListBody, updateresp.CreateListBody) {
+		t.Error("corp list not equal after update")
+	}
 	readall, err := sc.GetAllCorpLists(corp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, updatedCorpListBody, readall.Data[0].CreateListBody)
+	if len(readall.Data) != 1 {
+		t.Error()
+	}
+	if !compareCorpListBody(updatedCorpListBody, readall.Data[0].CreateListBody) {
+		t.Error("corp list not equal after update")
+	}
 	err = sc.DeleteCorpListByID(corp, readresp.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -636,7 +901,7 @@ func TestCreateReadUpdateDeleteCorpList(t *testing.T) {
 
 func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
+	corp := testcreds.corp
 	createSignalTagBody := CreateSignalTagBody{
 		ShortName:   "Example Signal Tag 1",
 		Description: "An example of a custom signal tag",
@@ -645,7 +910,9 @@ func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSignalTagBody, createresp.CreateSignalTagBody)
+	if !reflect.DeepEqual(createSignalTagBody, createresp.CreateSignalTagBody) {
+		t.Fatal()
+	}
 	expectedCreateResponse := ResponseSignalTagBody{
 		CreateSignalTagBody: CreateSignalTagBody{
 			ShortName:   "Example Signal Tag 1",
@@ -661,12 +928,16 @@ func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 	}
 	createresp.Created = time.Time{}
 	createresp.CreatedBy = ""
-	assert.Equal(t, expectedCreateResponse, createresp)
+	if !reflect.DeepEqual(expectedCreateResponse, createresp) {
+		t.Fail()
+	}
 	readresp, err := sc.GetCorpSignalTagByID(corp, createresp.TagName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSignalTagBody, readresp.CreateSignalTagBody)
+	if !reflect.DeepEqual(createSignalTagBody, readresp.CreateSignalTagBody) {
+		t.Fail()
+	}
 	updateSignalTagBody := UpdateSignalTagBody{
 		Description: "An example of a custom signal tag - UPDATE",
 	}
@@ -678,13 +949,19 @@ func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 		ShortName:   "Example Signal Tag 1",
 		Description: "An example of a custom signal tag - UPDATE",
 	}
-	assert.Equal(t, updatedSignalTagBody, updateresp.CreateSignalTagBody)
+	if !reflect.DeepEqual(updatedSignalTagBody, updateresp.CreateSignalTagBody) {
+		t.Fail()
+	}
 	readall, err := sc.GetAllCorpSignalTags(corp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, updatedSignalTagBody, readall.Data[0].CreateSignalTagBody)
+	if len(readall.Data) != 1 {
+		t.Fail()
+	}
+	if !reflect.DeepEqual(updatedSignalTagBody, readall.Data[0].CreateSignalTagBody) {
+		t.Fail()
+	}
 	err = sc.DeleteCorpSignalTagByID(corp, readresp.TagName)
 	if err != nil {
 		t.Fatal(err)
@@ -693,8 +970,8 @@ func TestCreateReadUpdateDeleteCorpTag(t *testing.T) {
 
 func TestCreateReadUpdateDeleteSignalTag(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
-	corp := "splunk-tescorp"
-	site := "splunk-test"
+	corp := testcreds.corp
+	site := testcreds.site
 	createSignalTagBody := CreateSignalTagBody{
 		ShortName:   "example-signal-tag",
 		Description: "An example of a custom signal tag",
@@ -707,7 +984,9 @@ func TestCreateReadUpdateDeleteSignalTag(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, createSignalTagBody, readresp.CreateSignalTagBody)
+	if !reflect.DeepEqual(createSignalTagBody, readresp.CreateSignalTagBody) {
+		t.Fail()
+	}
 	updateSignalTagBody := UpdateSignalTagBody{
 		Description: "An example of a custom signal tag - UPDATE",
 	}
@@ -719,14 +998,263 @@ func TestCreateReadUpdateDeleteSignalTag(t *testing.T) {
 		ShortName:   "example-signal-tag",
 		Description: "An example of a custom signal tag - UPDATE",
 	}
-	assert.Equal(t, updatedSignalTagBody, updateresp.CreateSignalTagBody)
+	if !reflect.DeepEqual(updatedSignalTagBody, updateresp.CreateSignalTagBody) {
+		t.Fail()
+	}
 	readall, err := sc.GetAllSiteSignalTags(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(readall.Data))
-	assert.Equal(t, updatedSignalTagBody, readall.Data[0].CreateSignalTagBody)
+	if len(readall.Data) != 1 {
+		t.Fail()
+	}
+	if !reflect.DeepEqual(updatedSignalTagBody, readall.Data[0].CreateSignalTagBody) {
+		t.Fail()
+	}
 	err = sc.DeleteSiteSignalTagByID(corp, site, readresp.TagName)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreateReadUpdateDeleteSiteTemplate(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+	createresp, err := sc.UpdateSiteTemplateRuleByID(corp, site, "LOGINATTEMPT", SiteTemplateRuleBody{
+		DetectionAdds: []Detection{
+			{
+				DetectionUpdateBody: DetectionUpdateBody{
+					Name:    "path",
+					Enabled: true,
+					Fields: []ConfiguredDetectionField{
+						{
+							Name:  "path",
+							Value: "/auth/*",
+						},
+					},
+				},
+			},
+		},
+		DetectionUpdates: []Detection{},
+		DetectionDeletes: []Detection{},
+		AlertAdds: []Alert{
+			{
+				AlertUpdateBody: AlertUpdateBody{
+					LongName:          "LOGINATTEMPT-50-in-1",
+					Interval:          1,
+					Threshold:         50,
+					SkipNotifications: true,
+					Enabled:           true,
+					Action:            "info",
+				}},
+		},
+		AlertUpdates: []Alert{},
+		AlertDeletes: []Alert{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	readresp, err := sc.GetSiteTemplateRuleByID(corp, site, createresp.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(createresp)
+	fmt.Println(readresp)
+}
+
+func TestCRUDCorpIntegrations(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+
+	url := "https://www.signalsciences.com"
+
+	createResp, err := sc.AddCorpIntegration(corp, IntegrationBody{
+		URL:    url,
+		Type:   "slack",
+		Events: []string{"webhookEvents"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readResp, err := sc.GetCorpIntegration(corp, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if createResp.ID != readResp.ID {
+		t.Fail()
+	}
+	if createResp.URL != readResp.URL {
+		t.Fail()
+	}
+	if createResp.Type != readResp.Type {
+		t.Fail()
+	}
+	if !reflect.DeepEqual([]string{"webhookEvents"}, readResp.Events) {
+		t.Fail()
+	}
+
+	newURL := url + "/blah"
+	err = sc.UpdateCorpIntegration(corp, readResp.ID, UpdateIntegrationBody{
+		URL:    newURL,
+		Events: []string{"corpUpdated", "listDeleted"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	readResp2, err := sc.GetCorpIntegration(corp, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newURL != readResp2.URL {
+		t.Fail()
+	}
+	if !reflect.DeepEqual([]string{"corpUpdated", "listDeleted"}, readResp2.Events) {
+		t.Fail()
+	}
+
+	err = sc.DeleteCorpIntegration(corp, readResp2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCRUDSiteMonitorDashboard(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+
+	createResp, err := sc.GenerateSiteMonitorDashboard(corp, site, "000000000000000000000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	monitors, err := sc.GetSiteMonitor(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var monitor SiteMonitor
+	for _, m := range monitors {
+		if m.ID == createResp.ID {
+			monitor = m
+		}
+	}
+	if monitor.ID == "" {
+		t.Fatal("couldnt find newly created site monitor")
+	}
+	if createResp.ID != monitor.ID {
+		t.Fail()
+	}
+	if createResp.URL != monitor.URL {
+		t.Fail()
+	}
+	if createResp.Share != monitor.Share {
+		t.Fail()
+	}
+
+	err = sc.UpdateSiteMonitor(corp, site, createResp.ID, UpdateSiteMonitorBody{
+		ID:    createResp.ID,
+		Share: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	monitors2, err := sc.GetSiteMonitor(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var monitor2 SiteMonitor
+	for _, m := range monitors2 {
+		if m.ID == createResp.ID {
+			monitor2 = m
+		}
+	}
+	if monitor2.ID == "" {
+		t.Fatal("couldnt find newly created site monitor")
+	}
+
+	if createResp.ID != monitor2.ID {
+		t.Fail()
+	}
+	if createResp.URL != monitor2.URL {
+		t.Fail()
+	}
+	if monitor2.Share != false {
+		t.Fail()
+	}
+
+	err = sc.DeleteSiteMonitor(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCRUDSiteMonitor(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+
+	createResp, err := sc.GenerateSiteMonitor(corp, site)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	monitors, err := sc.GetSiteMonitor(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var monitor SiteMonitor
+	for _, m := range monitors {
+		if m.ID == createResp.ID {
+			monitor = m
+		}
+	}
+	if monitor.ID == "" {
+		t.Fatal("couldnt find newly created site monitor")
+	}
+	if createResp.ID != monitor.ID {
+		t.Fail()
+	}
+	if createResp.URL != monitor.URL {
+		t.Fail()
+	}
+	if createResp.Share != monitor.Share {
+		t.Fail()
+	}
+
+	err = sc.UpdateSiteMonitor(corp, site, createResp.ID, UpdateSiteMonitorBody{
+		ID:    createResp.ID,
+		Share: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	monitors2, err := sc.GetSiteMonitor(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var monitor2 SiteMonitor
+	for _, m := range monitors2 {
+		if m.ID == createResp.ID {
+			monitor2 = m
+		}
+	}
+	if monitor2.ID == "" {
+		t.Fatal("couldnt find newly created site monitor")
+	}
+	if createResp.ID != monitor2.ID {
+		t.Fail()
+	}
+	if createResp.URL != monitor2.URL {
+		t.Fail()
+	}
+	if monitor2.Share != false {
+		t.Fail()
+	}
+
+	err = sc.DeleteSiteMonitor(corp, site, createResp.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
