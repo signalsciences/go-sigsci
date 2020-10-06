@@ -507,7 +507,7 @@ type UpdateSiteBody struct {
 	AgentLevel           string `json:"agentLevel,omitempty"`
 	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
 	BlockHTTPCode        int    `json:"blockHTTPCode,omitempty"`
-	AgentAnonMode        string `json:"agentAnonMode,omitempty"`
+	AgentAnonMode        string `json:"agentAnonMode"`
 }
 
 // UpdateSite updates a site by name.
@@ -1827,7 +1827,7 @@ type CreateSiteBody struct {
 	Name                 string `json:"name,omitempty"`                 //Identifying name of the site
 	DisplayName          string `json:"displayName,omitempty"`          //Display name of the site
 	AgentLevel           string `json:"agentLevel,omitempty"`           //Agent action level - 'block', 'log' or 'off'
-	AgentAnonMode        string `json:"agentAnonMode,omitempty"`        //Agent IP anonimization mode - 'EU' or ''
+	AgentAnonMode        string `json:"agentAnonMode"`                  //Agent IP anonimization mode - 'EU' or ''
 	BlockHTTPCode        int    `json:"blockHTTPCode,omitempty"`        //HTTP response code to send when when traffic is being blocked
 	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"` //Duration to block an IP in seconds
 }
@@ -2516,12 +2516,13 @@ type DetectionUpdateBody struct {
 
 //AlertUpdateBody body needed to update an alert
 type AlertUpdateBody struct {
-	LongName          string `json:"longName"`
-	Interval          int    `json:"interval"`  // 1, 10 or 60
-	Threshold         int    `json:"threshold"` // greater than 0, max 10000
-	SkipNotifications bool   `json:"skipNotifications,omitempty"`
-	Enabled           bool   `json:"enabled"`
-	Action            string `json:"action"`
+	LongName             string `json:"longName"`
+	Interval             int    `json:"interval"`  // 1, 10 or 60
+	Threshold            int    `json:"threshold"` // greater than 0, max 10000
+	SkipNotifications    bool   `json:"skipNotifications,omitempty"`
+	Enabled              bool   `json:"enabled"`
+	Action               string `json:"action"`
+	BlockDurationSeconds int    `json:"blockDurationSeconds"`
 }
 
 // SiteTemplateRuleBody needed to update a site template rule
