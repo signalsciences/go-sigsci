@@ -1,4 +1,4 @@
-module github.com/signalsciences/go-sigsci
+module github.com/JacobBarba/go-sigsci
 
 go 1.14
 
