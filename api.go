@@ -104,6 +104,12 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		if resp.StatusCode != http.StatusOK {
 			return body, errMsg(body)
 		}
+	case "PUT":
+		switch resp.StatusCode {
+		case http.StatusOK:
+		default:
+			return body, errMsg(body)
+		}
 	case "POST":
 		switch resp.StatusCode {
 		case http.StatusOK, http.StatusCreated, http.StatusNoContent:
