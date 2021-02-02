@@ -1041,12 +1041,13 @@ func TestCreateReadUpdateDeleteSiteTemplate(t *testing.T) {
 		AlertAdds: []Alert{
 			{
 				AlertUpdateBody: AlertUpdateBody{
-					LongName:          "LOGINATTEMPT-50-in-1",
-					Interval:          1,
-					Threshold:         50,
-					SkipNotifications: true,
-					Enabled:           true,
-					Action:            "info",
+					LongName:             "LOGINATTEMPT-50-in-1",
+					Interval:             1,
+					Threshold:            50,
+					SkipNotifications:    true,
+					Enabled:              true,
+					Action:               "info",
+					BlockDurationSeconds: 99677,
 				}},
 		},
 		AlertUpdates: []Alert{},
