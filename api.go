@@ -2522,7 +2522,7 @@ type AlertUpdateBody struct {
 	SkipNotifications    bool   `json:"skipNotifications,omitempty"`
 	Enabled              bool   `json:"enabled"`
 	Action               string `json:"action"`
-	BlockDurationSeconds int    `json:"blockDurationSeconds"`
+	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
 }
 
 // SiteTemplateRuleBody needed to update a site template rule
