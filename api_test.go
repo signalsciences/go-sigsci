@@ -1260,3 +1260,23 @@ func TestCRUDSiteMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestClient_GetSitePrimaryAgentKey(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+
+	keysResponse, err := sc.GetSitePrimaryAgentKey(corp, site)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if keysResponse.Name != site {
+		t.Error("primary key name should be the same as site name")
+	}
+	if keysResponse.AccessKey == "" {
+		t.Error("Expected access key to be populated")
+	}
+	if keysResponse.SecretKey == "" {
+		t.Error("Expected secret key to be populated")
+	}
+}
