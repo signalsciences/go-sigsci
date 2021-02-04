@@ -2591,3 +2591,36 @@ func (sc *Client) GetSiteTemplateRuleByID(corpName, siteName, id string) (SiteTe
 	}
 	return getResponseSiteTemplateBody(resp)
 }
+
+// PrimaryAgentKey contains the secret and access keys used by the agents
+type PrimaryAgentKey struct {
+	Name      string
+	AccessKey string
+	SecretKey string
+}
+
+type primaryAgentKeyResp struct {
+	Name      string `json:"name"`
+	AccessKey string `json:"accessKey"`
+	SecretKey string `json:"secretKey"`
+}
+
+// GetSitePrimaryAgentKey retrieve the primary agent keys
+func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgentKey, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/keys", corpName, siteName), "")
+	if err != nil {
+		return PrimaryAgentKey{}, err
+	}
+	var responseBody primaryAgentKeyResp
+	if err = json.Unmarshal(resp, &responseBody); err != nil {
+		return PrimaryAgentKey{}, err
+	}
+
+	primaryKey := PrimaryAgentKey{
+		Name:      responseBody.Name,
+		SecretKey: responseBody.SecretKey,
+		AccessKey: responseBody.AccessKey,
+	}
+
+	return primaryKey, nil
+}
