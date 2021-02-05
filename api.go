@@ -535,19 +535,19 @@ func (sc *Client) UpdateSite(corpName, siteName string, body UpdateSiteBody) (Si
 type CustomAlert struct {
 	ID                   string    `json:"id,omitempty"` //Site-specific unique ID of the alert
 	SiteID               string    `json:"siteID,omitempty"`
-	TagName              string    `json:"tagName,omitempty"`    //The name of the tag whose occurrences the alert is watching. Must match an existing tag
-	LongName             string    `json:"longName,omitempty"`   //A human readable description of the alert. Must be between 3 and 25 characters.
-	Interval             int       `json:"interval"`             //The number of minutes of past traffic to examine. Must be 1, 10 or 60.
-	Threshold            int       `json:"threshold"`            //The number of occurrences of the tag in the interval needed to trigger the alert.
-	BlockDurationSeconds int       `json:"blockDurationSeconds"` //The number of seconds this alert is active.
-	Enabled              bool      `json:"enabled"`              //A flag to toggle this alert.
-	Action               string    `json:"action,omitempty"`     //A flag that describes what happens when the alert is triggered. 'info' creates an incident in the dashboard. 'flagged' creates an incident and blocks traffic for 24 hours.
-	Type                 string    `json:"type,omitempty"`       //Type of alert (siteAlert, template, rateLimit, siteMetric)
-	SkipNotifications    bool      `json:"skipNotifications"`    //A flag to disable external notifications - slack, webhooks, emails, etc.
+	TagName              string    `json:"tagName,omitempty"`              //The name of the tag whose occurrences the alert is watching. Must match an existing tag
+	LongName             string    `json:"longName,omitempty"`             //A human readable description of the alert. Must be between 3 and 25 characters.
+	Interval             int       `json:"interval"`                       //The number of minutes of past traffic to examine. Must be 1, 10 or 60.
+	Threshold            int       `json:"threshold"`                      //The number of occurrences of the tag in the interval needed to trigger the alert.
+	BlockDurationSeconds int       `json:"blockDurationSeconds,omitempty"` //The number of seconds this alert is active. empty means default value
+	Enabled              bool      `json:"enabled"`                        //A flag to toggle this alert.
+	Action               string    `json:"action,omitempty"`               //A flag that describes what happens when the alert is triggered. 'info' creates an incident in the dashboard. 'flagged' creates an incident and blocks traffic for 24 hours.
+	Type                 string    `json:"type,omitempty"`                 //Type of alert (siteAlert, template, rateLimit, siteMetric)
+	SkipNotifications    bool      `json:"skipNotifications"`              //A flag to disable external notifications - slack, webhooks, emails, etc.
 	FieldName            string    `json:"fieldName,omitempty"`
 	CreatedBy            string    `json:"createdBy,omitempty"` //The email of the user that created the alert
 	Created              time.Time `json:"created,omitempty"`   //RFC3339 date time
-	Operator             string
+	Operator             string    `json:"operator,omitempty"`
 }
 
 // customAlertsResponse is the response for the alerts endpoint
@@ -573,12 +573,13 @@ func (sc *Client) ListCustomAlerts(corpName, siteName string) ([]CustomAlert, er
 
 // CustomAlertBody is the body for creating a custom alert.
 type CustomAlertBody struct {
-	TagName   string `json:"tagName"`
-	LongName  string `json:"longName"`
-	Interval  int    `json:"interval"`
-	Threshold int    `json:"threshold"`
-	Enabled   bool   `json:"enabled"`
-	Action    string `json:"action"`
+	TagName           string `json:"tagName"`
+	LongName          string `json:"longName"`
+	Interval          int    `json:"interval"`
+	Threshold         int    `json:"threshold"`
+	Enabled           bool   `json:"enabled"`
+	Action            string `json:"action"`
+	SkipNotifications bool   `json:"skipNotifications"`
 }
 
 // CreateCustomAlert creates a custom alert.
@@ -625,6 +626,27 @@ func (sc *Client) UpdateCustomAlert(corpName, siteName, id string, body CustomAl
 	}
 
 	resp, err := sc.doRequest("PATCH", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), string(b))
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	var c CustomAlert
+	err = json.Unmarshal(resp, &c)
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	return c, err
+}
+
+// ReplaceCustomAlert updates a custom alert by id.
+func (sc *Client) ReplaceCustomAlert(corpName, siteName, id string, body CustomAlert) (CustomAlert, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return CustomAlert{}, err
+	}
+
+	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), string(b))
 	if err != nil {
 		return CustomAlert{}, err
 	}
