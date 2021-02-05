@@ -573,12 +573,12 @@ func (sc *Client) ListCustomAlerts(corpName, siteName string) ([]CustomAlert, er
 
 // CustomAlertBody is the body for creating a custom alert.
 type CustomAlertBody struct {
-	TagName   string `json:"tagName"`
-	LongName  string `json:"longName"`
-	Interval  int    `json:"interval"`
-	Threshold int    `json:"threshold"`
-	Enabled   bool   `json:"enabled"`
-	Action    string `json:"action"`
+	TagName   string `hcl:"tag_name" json:"tagName"`
+	LongName  string `hcl:"long_name" json:"longName"`
+	Interval  int    `hcl:"interval" json:"interval"`
+	Threshold int    `hcl:"threshold" json:"threshold"`
+	Enabled   bool   `hcl:"enabled" json:"enabled"`
+	Action    string `hcl:"action" json:"action"`
 }
 
 // CreateCustomAlert creates a custom alert.
@@ -1864,38 +1864,38 @@ func (sc *Client) DeleteSite(corpName, siteName string) error {
 
 // Condition contains rule condition
 type Condition struct {
-	Type          string      `json:"type,omitempty"`          //(group, single)
-	GroupOperator string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Field         string      `json:"field,omitempty"`         //type: single - (scheme, method, path, useragent, domain, ip, responseCode, agentname, paramname, paramvalue, country, name, valueString, valueIp, signalType)
-	Operator      string      `json:"operator,omitempty"`      //type: single - (equals, doesNotEqual, contains, doesNotContain, like, notLike, exists, doesNotExist, inList, notInList)
-	Value         string      `json:"value,omitempty"`         //type: single - See request fields (https://docs.signalsciences.net/using-signal-sciences/features/rules/#request-fields)
-	Conditions    []Condition `json:"conditions,omitempty"`
+	Type          string      `hcl:"type" json:"type,omitempty"`                    //(group, single)
+	GroupOperator string      `hcl:"group_operator" json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
+	Field         string      `hcl:"field" json:"field,omitempty"`                  //type: single - (scheme, method, path, useragent, domain, ip, responseCode, agentname, paramname, paramvalue, country, name, valueString, valueIp, signalType)
+	Operator      string      `hcl:"operator" json:"operator,omitempty"`            //type: single - (equals, doesNotEqual, contains, doesNotContain, like, notLike, exists, doesNotExist, inList, notInList)
+	Value         string      `hcl:"value" json:"value,omitempty"`                  //type: single - See request fields (https://docs.signalsciences.net/using-signal-sciences/features/rules/#request-fields)
+	Conditions    []Condition `hcl:"conditions,block" json:"conditions,omitempty"`
 }
 
 // Action contains the rule action
 type Action struct {
-	Type   string `json:"type,omitempty"` //(block, allow, exclude)
-	Signal string `json:"signal,omitempty"`
+	Type   string `hcl:"type" json:"type,omitempty"` //(block, allow, exclude)
+	Signal string `hcl:"signal" json:"signal,omitempty"`
 }
 
 // RateLimit holds all the data that is specific to rate limit rules
 type RateLimit struct {
-	Threshold int `json:"threshold"`
-	Interval  int `json:"interval"` // interval in minutes, 1 or 10
-	Duration  int `json:"duration"` // duration in seconds
+	Threshold int `hcl:"threshold" json:"threshold"`
+	Interval  int `hcl:"interval" json:"interval"` // interval in minutes, 1 or 10
+	Duration  int `hcl:"duration" json:"duration"` // duration in seconds
 }
 
 //CreateSiteRuleBody contains the rule for the site
 type CreateSiteRuleBody struct {
-	Type          string      `json:"type,omitempty,omitempty"` //(signal, request, rateLimit)
-	GroupOperator string      `json:"groupOperator,omitempty"`  //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Enabled       bool        `json:"enabled,omitempty"`
-	Reason        string      `json:"reason,omitempty"`     //Description of the rule
-	Signal        string      `json:"signal,omitempty"`     //The signal id of the signal being excluded. Null unless type==request
-	Expiration    string      `json:"expiration,omitempty"` //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
-	Conditions    []Condition `json:"conditions,omitempty"`
-	Actions       []Action    `json:"actions,omitempty"`
-	RateLimit     *RateLimit  `json:"rateLimit,omitempty"` //Null unless type==rateLimit
+	Type          string      `hcl:"type" json:"type,omitempty,omitempty"`          //(signal, request, rateLimit)
+	GroupOperator string      `hcl:"group_operator" json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
+	Enabled       bool        `hcl:"enabled" json:"enabled,omitempty"`
+	Reason        string      `hcl:"reason" json:"reason,omitempty"`         //Description of the rule
+	Signal        string      `hcl:"signal" json:"signal,omitempty"`         //The signal id of the signal being excluded. Null unless type==request
+	Expiration    string      `hcl:"expiration" json:"expiration,omitempty"` //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
+	Conditions    []Condition `hcl:"conditions,block" json:"conditions,omitempty"`
+	Actions       []Action    `hcl:"actions,block" json:"actions,omitempty"`
+	RateLimit     *RateLimit  `hcl:"rate_limit,block" json:"rateLimit,omitempty"` //Null unless type==rateLimit
 }
 
 // ResponseSiteRuleBody contains the response from creating the rule
@@ -1985,10 +1985,10 @@ func (sc *Client) GetAllSiteRules(corpName, siteName string) (ResponseSiteRuleBo
 
 // CreateListBody Create List Request
 type CreateListBody struct {
-	Name        string   `json:"name,omitempty"`        //Descriptive list name
-	Type        string   `json:"type,omitempty"`        //List types (string, ip, country, wildcard, signal)
-	Description string   `json:"description,omitempty"` //Optional list description
-	Entries     []string `json:"entries,omitempty"`     //List entries
+	Name        string   `hcl:"name" json:"name,omitempty"`               //Descriptive list name
+	Type        string   `hcl:"type" json:"type,omitempty"`               //List types (string, ip, country, wildcard, signal)
+	Description string   `hcl:"description" json:"description,omitempty"` //Optional list description
+	Entries     []string `hcl:"entries" json:"entries,omitempty"`         //List entries
 }
 
 // UpdateListBody update list
@@ -2087,8 +2087,8 @@ func (sc *Client) GetAllSiteLists(corpName, siteName string) (ResponseListBodyLi
 
 // CreateSiteRedactionBody Create redaction Request
 type CreateSiteRedactionBody struct {
-	Field         string `json:"field,omitempty"` //Field name
-	RedactionType int    `json:"redactionType"`   //Type of redaction (0: Request Parameter, 1: Request Header, 2: Response Header)
+	Field         string `hcl:"field" json:"field,omitempty"`        //Field name
+	RedactionType int    `hcl:"redaction_type" json:"redactionType"` //Type of redaction (0: Request Parameter, 1: Request Header, 2: Response Header)
 }
 
 //UpdateSiteRedactionBody update site redaction
@@ -2196,16 +2196,16 @@ func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteR
 
 //CreateCorpRuleBody contains the rule of a Corp
 type CreateCorpRuleBody struct {
-	SiteNames     []string    `json:"siteNames,omitempty"`      //Sites with the rule available. Rules with a global corpScope will return '[]'.
-	Type          string      `json:"type,omitempty,omitempty"` //(request, signal)
-	CorpScope     string      `json:"corpScope,omitempty"`      //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
-	Enabled       bool        `json:"enabled,omitempty"`
-	GroupOperator string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Signal        string      `json:"signal,omitempty"`        //The signal id of the signal being excluded
-	Reason        string      `json:"reason,omitempty"`        //Description of the rule
-	Expiration    string      `json:"expiration,omitempty"`    //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
-	Conditions    []Condition `json:"conditions,omitempty"`
-	Actions       []Action    `json:"actions,omitempty"`
+	SiteNames     []string    `hcl:"site_short_names" json:"siteNames,omitempty"` //Sites with the rule available. Rules with a global corpScope will return '[]'.
+	Type          string      `hcl:"type" json:"type,omitempty,omitempty"`        //(request, signal)
+	CorpScope     string      `hcl:"corp_scope" json:"corpScope,omitempty"`       //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
+	Enabled       bool        `hcl:"enabled" json:"enabled,omitempty"`
+	GroupOperator string      `hcl:"group_operator" json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
+	Signal        string      `hcl:"signal" json:"signal,omitempty"`                //The signal id of the signal being excluded
+	Reason        string      `hcl:"reason" json:"reason,omitempty"`                //Description of the rule
+	Expiration    string      `hcl:"expiration" json:"expiration,omitempty"`        //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
+	Conditions    []Condition `hcl:"conditions,block" json:"conditions,omitempty"`
+	Actions       []Action    `hcl:"actions,block" json:"actions,omitempty"`
 }
 
 // ResponseCorpRuleBody contains the response from creating the rule
@@ -2350,8 +2350,8 @@ func (sc *Client) DeleteCorpListByID(corpName string, id string) error {
 
 //CreateSignalTagBody create a signal tag
 type CreateSignalTagBody struct {
-	ShortName   string `json:"shortName,omitempty"`   //The display name of the signal tag
-	Description string `json:"description,omitempty"` //Optional signal tag description
+	ShortName   string `hcl:"short_name" json:"shortName,omitempty"`    //The display name of the signal tag
+	Description string `hcl:"description" json:"description,omitempty"` //Optional signal tag description
 }
 
 //UpdateSignalTagBody update a signal tag
