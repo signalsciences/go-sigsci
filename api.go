@@ -639,27 +639,6 @@ func (sc *Client) UpdateCustomAlert(corpName, siteName, id string, body CustomAl
 	return c, err
 }
 
-// ReplaceCustomAlert updates a custom alert by id.
-func (sc *Client) ReplaceCustomAlert(corpName, siteName, id string, body CustomAlert) (CustomAlert, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return CustomAlert{}, err
-	}
-
-	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), string(b))
-	if err != nil {
-		return CustomAlert{}, err
-	}
-
-	var c CustomAlert
-	err = json.Unmarshal(resp, &c)
-	if err != nil {
-		return CustomAlert{}, err
-	}
-
-	return c, err
-}
-
 // DeleteCustomAlert deletes a custom alert.
 func (sc *Client) DeleteCustomAlert(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/alerts/%s", corpName, siteName, id), "")
