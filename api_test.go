@@ -107,6 +107,10 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		AgentAnonMode:        "EU",
 	})
 
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if "Test Site 2" != updateSite.DisplayName {
 		t.Errorf("Displayname got %s expected %s", updateSite.DisplayName, "Test Site 2")
 	}
@@ -375,6 +379,10 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	}
 
 	readresp, err := sc.GetSiteListByID(corp, site, createresp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if !reflect.DeepEqual(createSiteListBody, readresp.CreateListBody) {
 		t.Error("Site list body not equal after read")
 	}
@@ -405,6 +413,10 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 		t.Error("Site list body not equal")
 	}
 	readall, err := sc.GetAllSiteLists(corp, site)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if len(readall.Data) != 1 {
 		t.Error()
 	}
@@ -494,6 +506,9 @@ func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 	if !reflect.DeepEqual(createSiteRedactionBody, readresp.CreateSiteRedactionBody) {
 		t.Error("Site redaction body not equal after read")
 	}
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	updateSiteRedactionBody := CreateSiteRedactionBody{
 		Field:         "cookie",
@@ -507,6 +522,10 @@ func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 		t.Error("Site redaction body not equal after update")
 	}
 	readall, err := sc.GetAllSiteRedactions(corp, site)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if len(readall.Data) != 1 {
 		t.Error("incorrect number of site redactions, make sure you didnt add any manually")
 	}
