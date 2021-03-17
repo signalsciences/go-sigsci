@@ -185,7 +185,7 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 			},
 		},
 		Actions: []Action{
-			Action{
+			{
 				Type: "excludeSignal",
 			},
 		},
