@@ -12,8 +12,8 @@ go get github.com/signalsciences/go-sigsci
 ## Usage
 
 ```
-email := “[sigsci email]”
-password := “[sigsci password]“
+email := "[sigsci email]"
+password := "[sigsci password]"
 sc, err := sigsci.NewClient(email, password)
 if err != nil {
         log.Fatal(err)
@@ -32,8 +32,8 @@ import (
 )
 
 func main() {
-        email := “[sigsci email]“
-        password := “[sigsci password]“
+        email := "[sigsci email]"
+        password := "[sigsci password]"
         sc, err := sigsci.NewClient(email, password)
         if err != nil {
                 log.Fatal(err)
