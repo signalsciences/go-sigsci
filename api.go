@@ -13,7 +13,13 @@ import (
 	"time"
 )
 
-const apiURL = "https://dashboard.signalsciences.net/api"
+// apiURL is the base URL for API requests
+var apiURL = "https://dashboard.signalsciences.net/api"
+
+// SetAPIUrl allows developer to point to a different endpoint in special circumstances (e.g. during testing)
+func SetAPIUrl(theURL string) {
+	apiURL = theURL
+}
 
 // Client is the API client
 type Client struct {
