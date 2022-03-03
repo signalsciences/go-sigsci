@@ -1885,7 +1885,7 @@ type Condition struct {
 type Action struct {
 	Type         string `json:"type,omitempty"` //(block, allow, exclude)
 	Signal       string `json:"signal,omitempty"`
-	ResponseCode int    `json:"responseCode"` //(400-499)
+	ResponseCode int    `json:"responseCode,omitempty"` //(400-499)
 }
 
 // RateLimit holds all the data that is specific to rate limit rules
