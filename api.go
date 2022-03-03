@@ -1881,8 +1881,9 @@ type Condition struct {
 
 // Action contains the rule action
 type Action struct {
-	Type   string `json:"type,omitempty"` //(block, allow, exclude)
-	Signal string `json:"signal,omitempty"`
+	Type         string `json:"type,omitempty"` //(block, allow, exclude)
+	Signal       string `json:"signal,omitempty"`
+	ResponseCode int    `json:"responseCode"` //(400-499)
 }
 
 // RateLimit holds all the data that is specific to rate limit rules
@@ -1908,10 +1909,11 @@ type CreateSiteRuleBody struct {
 // ResponseSiteRuleBody contains the response from creating the rule
 type ResponseSiteRuleBody struct {
 	CreateSiteRuleBody
-	ID        string    `json:"id"`        //internal ID
-	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
-	Created   time.Time `json:"created"`   //Created RFC3339 date time
-	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
+	ID        string    `json:"id"`                //internal ID
+	CreatedBy string    `json:"createdby"`         //Email address of the user that created the item
+	Created   time.Time `json:"created"`           //Created RFC3339 date time
+	Updated   time.Time `json:"updated"`           //Last updated RFC3339 date time
+	Message   string    `json:"message,omitempty"` //Error message
 }
 
 // ResponseSiteRuleBodyList contains the returned rules
@@ -1969,6 +1971,9 @@ func getResponseSiteRuleBody(response []byte) (ResponseSiteRuleBody, error) {
 	err := json.Unmarshal(response, &responseSiteRules)
 	if err != nil {
 		return ResponseSiteRuleBody{}, err
+	}
+	if responseSiteRules.Message != "" { // Another way to indicate errors
+		return ResponseSiteRuleBody{}, errors.New(responseSiteRules.Message)
 	}
 	return responseSiteRules, nil
 }
