@@ -120,10 +120,13 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		if resp.StatusCode != http.StatusNoContent {
 			return body, errMsg(body)
 		}
+	case "PUT":
+		fallthrough
 	case "PATCH":
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			return body, errMsg(body)
 		}
+
 	}
 
 	return body, nil
@@ -1913,7 +1916,6 @@ type ResponseSiteRuleBody struct {
 	CreatedBy string    `json:"createdby"`         //Email address of the user that created the item
 	Created   time.Time `json:"created"`           //Created RFC3339 date time
 	Updated   time.Time `json:"updated"`           //Last updated RFC3339 date time
-	Message   string    `json:"message,omitempty"` //Error message
 }
 
 // ResponseSiteRuleBodyList contains the returned rules
@@ -1971,9 +1973,6 @@ func getResponseSiteRuleBody(response []byte) (ResponseSiteRuleBody, error) {
 	err := json.Unmarshal(response, &responseSiteRules)
 	if err != nil {
 		return ResponseSiteRuleBody{}, err
-	}
-	if responseSiteRules.Message != "" { // Another way to indicate errors
-		return ResponseSiteRuleBody{}, errors.New(responseSiteRules.Message)
 	}
 	return responseSiteRules, nil
 }
