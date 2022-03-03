@@ -1912,10 +1912,10 @@ type CreateSiteRuleBody struct {
 // ResponseSiteRuleBody contains the response from creating the rule
 type ResponseSiteRuleBody struct {
 	CreateSiteRuleBody
-	ID        string    `json:"id"`                //internal ID
-	CreatedBy string    `json:"createdby"`         //Email address of the user that created the item
-	Created   time.Time `json:"created"`           //Created RFC3339 date time
-	Updated   time.Time `json:"updated"`           //Last updated RFC3339 date time
+	ID        string    `json:"id"`        //internal ID
+	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
+	Created   time.Time `json:"created"`   //Created RFC3339 date time
+	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
 }
 
 // ResponseSiteRuleBodyList contains the returned rules
