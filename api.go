@@ -126,7 +126,6 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			return body, errMsg(body)
 		}
-
 	}
 
 	return body, nil
