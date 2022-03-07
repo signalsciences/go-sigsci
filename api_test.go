@@ -246,7 +246,7 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !compareSiteRuleBody(updateSiteRuleBody, updateResp.CreateSiteRuleBody) {
-		t.Errorf("CreateSiteRulesgot: %v expected %v", createResp, createSiteRulesBody)
+		t.Errorf("CreateSiteRules got: %v expected %v", updateResp, updateSiteRuleBody)
 	}
 
 	readall, err := sc.GetAllSiteRules(corp, site)
@@ -1297,5 +1297,86 @@ func TestClient_GetSitePrimaryAgentKey(t *testing.T) {
 	}
 	if keysResponse.SecretKey == "" {
 		t.Error("Expected secret key to be populated")
+	}
+}
+
+func TestCreateSiteRulesResponseCode(t *testing.T) {
+	createSiteRulesBody := CreateSiteRuleBody{
+		Type:          "request",
+		GroupOperator: "all",
+		Enabled:       true,
+		Reason:        "Example site rule",
+		Expiration:    "",
+		Conditions: []Condition{
+			{
+				Type:     "single",
+				Field:    "ip",
+				Operator: "equals",
+				Value:    "1.2.3.4",
+			},
+		},
+		Actions: []Action{
+			{
+				Type:         "block",
+				ResponseCode: 499,
+			},
+		},
+	}
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+	createResp, err := sc.CreateSiteRule(corp, site, createSiteRulesBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(createResp.CreateSiteRuleBody.Actions) > 0 && createResp.CreateSiteRuleBody.Actions[0].ResponseCode != 499 {
+		t.Errorf("expected response code to be 499")
+	}
+	if !compareSiteRuleBody(createSiteRulesBody, createResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRulesgot: %v expected %v", createResp, createSiteRulesBody)
+	}
+
+	readResp, err := sc.GetSiteRuleByID(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !compareSiteRuleBody(createSiteRulesBody, readResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRulesgot: %v expected %v", createResp, createSiteRulesBody)
+	}
+	updateSiteRuleBody := CreateSiteRuleBody{
+		Type:          "request",
+		GroupOperator: "all",
+		Enabled:       true,
+		Reason:        "Example site rule",
+		Expiration:    "",
+		Conditions: []Condition{
+			{
+				Type:     "single",
+				Field:    "ip",
+				Operator: "equals",
+				Value:    "1.2.3.4",
+			},
+		},
+		Actions: []Action{
+			{
+				Type:         "block",
+				ResponseCode: 418,
+			},
+		},
+	}
+	updateResp, err := sc.UpdateSiteRuleByID(corp, site, createResp.ID, updateSiteRuleBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updateResp.CreateSiteRuleBody.Actions) > 0 && updateResp.CreateSiteRuleBody.Actions[0].ResponseCode != 418 {
+		t.Errorf("expected response code to be 418, I'm a teapot.")
+	}
+	if !compareSiteRuleBody(updateSiteRuleBody, updateResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRules got: %v expected %v", updateResp, updateSiteRuleBody)
+	}
+
+	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
