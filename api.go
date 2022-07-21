@@ -1888,6 +1888,7 @@ type Action struct {
 	ResponseCode int    `json:"responseCode,omitempty"` //(400-499)
 }
 
+// ClientIdentifier contains the client identifier fields for site rules of type rate_limit
 type ClientIdentifier struct {
 	Key  string `json:"key,omitempty"`
 	Name string `json:"name,omitempty"`
