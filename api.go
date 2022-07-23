@@ -1227,6 +1227,143 @@ func (sc *Client) DeleteCorpIntegration(corpName, id string) error {
 	return err
 }
 
+// CloudWAFInstance contains the data for a Cloud WAF Instance read API call.
+type CloudWAFInstance struct {
+	ID                      string                            `json:"id"`
+	Name                    string                            `json:"name"`
+	Description             string                            `json:"description"`
+	Region                  string                            `json:"region"`
+	TLSMinVersion           string                            `json:"tlsMinVersion"`
+	WorkspaceConfigs        []CloudWAFInstanceWorkspaceConfig `json:"workspaceConfigs"`
+	Deploymenet             CloudWAFInstanceDeployment        `json:"deployment"`
+	UseUploadedCertificates bool                              `json:"useUploadedCertificates"`
+	CreatedBy               string                            `json:"createdBy"`
+	Created                 string                            `json:"created"`
+	UpdatedBy               string                            `json:"updatedBy"`
+}
+
+// CloudWAFInstanceDeployment contains the data for a Cloud WAF instance eeployment.
+type CloudWAFInstanceDeployment struct {
+	Status    string                     `json:"status"`
+	Message   string                     `json:"message"`
+	EgressIPs []CloudWAFInstanceEgressIP `json:"egressIPs"`
+	DNSEntry  string                     `json:"dnsEntry"`
+}
+
+// CloudWAFInstanceEgressIP contains the data for a Cloud WAF instance egress IP.
+type CloudWAFInstanceEgressIP struct {
+	IP        string `json:"ip"`
+	Status    string `json:"status"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+// CloudWAFInstanceBody is the body for adding or updating a Cloud WAF instance.
+type CloudWAFInstanceBody struct {
+	Name                    string                            `json:"name"`
+	Description             string                            `json:"description"`
+	Region                  string                            `json:"region"`
+	TLSMinVersion           string                            `json:"tlsMinVersion"`
+	UseUploadedCertificates bool                              `json:"useUploadedCertificates"`
+	WorkspaceConfigs        []CloudWAFInstanceWorkspaceConfig `json:"workspaceConfigs"`
+}
+
+// CloudWAFInstanceWorkspaceConfig contains the data for a Cloud WAF instance workspace config.
+type CloudWAFInstanceWorkspaceConfig struct {
+	SiteName          string                           `json:"siteName"`
+	InstanceLocation  string                           `json:"instanceLocation"`
+	ClientIPHeader    string                           `json:"clientIPHeader"`
+	ListenerProtocols []string                         `json:"listenerProtocols"`
+	Routes            []CloudWAFInstanceWorkspaceRoute `json:"routes"`
+}
+
+// CloudWAFInstanceWorkspaceRoute contains the data for a Cloud WAF instance workspace route.
+type CloudWAFInstanceWorkspaceRoute struct {
+	// ID is the route's ID after being created. It should not be populated during
+	// create but should be populated during update.
+	ID                    string   `json:"id"`
+	CertificateIDs        []string `json:"certificateIds"`
+	Origin                string   `json:"origin"`
+	Domains               []string `json:"domains"`
+	ConnectionPooling     bool     `json:"connectionPooling"`
+	PassHostHeader        bool     `json:"passHostHeader"`
+	TLSHostOverride       bool     `json:"tlsHostOverride"`
+	TLSInsecureSkipVerify bool     `json:"tlsInsecureSkipVerify"`
+	TrustProxyHeaders     bool     `json:"trustProxyHeaders"`
+}
+
+// cloudWAFInstancesResponse is the response for the list cloudwafInstances endpoint.
+type cloudWAFInstancesResponse struct {
+	Data []CloudWAFInstance `json:"data"`
+}
+
+// ListCloudWAFInstances lists Cloud WAF instances.
+func (sc *Client) ListCloudWAFInstances(corpName string) ([]CloudWAFInstance, error) {
+	resp, err := sc.doRequest(http.MethodGet, fmt.Sprintf("/v0/corps/%s/cloudwafInstances", corpName), "")
+	if err != nil {
+		return []CloudWAFInstance{}, err
+	}
+
+	var cwr cloudWAFInstancesResponse
+	err = json.Unmarshal(resp, &cwr)
+	if err != nil {
+		return []CloudWAFInstance{}, err
+	}
+
+	return cwr.Data, nil
+}
+
+// CreateCloudWAFInstance adds a Cloud WAF instance.
+func (sc *Client) CreateCloudWAFInstance(corpName string, body CloudWAFInstanceBody) (CloudWAFInstance, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return CloudWAFInstance{}, err
+	}
+
+	resp, err := sc.doRequest(http.MethodPost, fmt.Sprintf("/v0/corps/%s/cloudwafInstances", corpName), string(b))
+	if err != nil {
+		return CloudWAFInstance{}, err
+	}
+
+	var cwr CloudWAFInstance
+	return cwr, json.Unmarshal(resp, &cwr)
+}
+
+// GetCloudWAFInstance gets a Cloud WAF instance by id.
+func (sc *Client) GetCloudWAFInstance(corpName, id string) (CloudWAFInstance, error) {
+	resp, err := sc.doRequest(http.MethodGet, fmt.Sprintf("/v0/corps/%s/cloudwafInstances/%s", corpName, id), "")
+	if err != nil {
+		return CloudWAFInstance{}, err
+	}
+
+	var cwr CloudWAFInstance
+	return cwr, json.Unmarshal(resp, &cwr)
+}
+
+// UpdateCloudWAFInstance updates a Cloud WAF instance by id.
+func (sc *Client) UpdateCloudWAFInstance(corpName, id string, body CloudWAFInstanceBody) error {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	_, err = sc.doRequest(http.MethodPut, fmt.Sprintf("/v0/corps/%s/cloudwafInstances/%s", corpName, id), string(b))
+	return err
+}
+
+// DeleteCloudWAFIntance deletes a Cloud WAF instance by id.
+func (sc *Client) DeleteCloudWAFIntance(corpName, id string) error {
+	_, err := sc.doRequest(http.MethodDelete, fmt.Sprintf("/v0/corps/%s/cloudwafInstances/%s", corpName, id), "")
+
+	return err
+}
+
+// RestartCloudWAFIntance restartins a Cloud WAF instance by id.
+func (sc *Client) RestartCloudWAFIntance(corpName, id string) error {
+	_, err := sc.doRequest(http.MethodPost, fmt.Sprintf("/v0/corps/%s/cloudwafInstances/%s/restart", corpName, id), "")
+
+	return err
+}
+
 // Param is a whitelisted parameter.
 type Param struct {
 	ID        string
