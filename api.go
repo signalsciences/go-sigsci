@@ -1350,15 +1350,15 @@ func (sc *Client) UpdateCloudWAFInstance(corpName, id string, body CloudWAFInsta
 	return err
 }
 
-// DeleteCloudWAFIntance deletes a Cloud WAF instance by id.
-func (sc *Client) DeleteCloudWAFIntance(corpName, id string) error {
+// DeleteCloudWAFInstance deletes a Cloud WAF instance by id.
+func (sc *Client) DeleteCloudWAFInstance(corpName, id string) error {
 	_, err := sc.doRequest(http.MethodDelete, fmt.Sprintf("/v0/corps/%s/cloudwafInstances/%s", corpName, id), "")
 
 	return err
 }
 
-// RestartCloudWAFIntance restartins a Cloud WAF instance by id.
-func (sc *Client) RestartCloudWAFIntance(corpName, id string) error {
+// RestartCloudWAFInstance restarts a Cloud WAF instance by id.
+func (sc *Client) RestartCloudWAFInstance(corpName, id string) error {
 	_, err := sc.doRequest(http.MethodPost, fmt.Sprintf("/v0/corps/%s/cloudwafInstances/%s/restart", corpName, id), "")
 
 	return err
