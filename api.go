@@ -1235,7 +1235,7 @@ type CloudWAFInstance struct {
 	Region                  string                            `json:"region"`
 	TLSMinVersion           string                            `json:"tlsMinVersion"`
 	WorkspaceConfigs        []CloudWAFInstanceWorkspaceConfig `json:"workspaceConfigs"`
-	Deploymenet             CloudWAFInstanceDeployment        `json:"deployment"`
+	Deployment              CloudWAFInstanceDeployment        `json:"deployment"`
 	UseUploadedCertificates bool                              `json:"useUploadedCertificates"`
 	CreatedBy               string                            `json:"createdBy"`
 	Created                 string                            `json:"created"`
