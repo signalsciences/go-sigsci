@@ -2025,11 +2025,19 @@ type Action struct {
 	ResponseCode int    `json:"responseCode,omitempty"` //(400-499)
 }
 
+// ClientIdentifier contains the client identifier fields for site rules of type rate_limit
+type ClientIdentifier struct {
+	Key  string `json:"key,omitempty"`
+	Name string `json:"name,omitempty"`
+	Type string `json:"type"`
+}
+
 // RateLimit holds all the data that is specific to rate limit rules
 type RateLimit struct {
-	Threshold int `json:"threshold"`
-	Interval  int `json:"interval"` // interval in minutes, 1 or 10
-	Duration  int `json:"duration"` // duration in seconds
+	Threshold         int                `json:"threshold"`
+	Interval          int                `json:"interval"` // interval in minutes, 1 or 10
+	Duration          int                `json:"duration"` // duration in seconds
+	ClientIdentifiers []ClientIdentifier `json:"clientIdentifiers"`
 }
 
 //CreateSiteRuleBody contains the rule for the site

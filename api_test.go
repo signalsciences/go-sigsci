@@ -1543,3 +1543,83 @@ func TestCreateSiteRulesResponseCode(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCreateSiteRulesRateLimitClientIdentifiers(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+
+	// A test signal is needed for the request, make this first
+	createSignalTagBody := CreateSignalTagBody{
+		ShortName:   "client-ident-signal-tag",
+		Description: "An example of a custom signal tag",
+	}
+	createSignalresp, err := sc.CreateSiteSignalTag(corp, site, createSignalTagBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err := sc.DeleteSiteSignalTagByID(corp, site, createSignalresp.TagName)
+		if err != nil {
+			fmt.Printf("Failed to delete tag %s, you might have to do this manually in the console\n", createSignalresp.TagName)
+		}
+	}()
+
+	// Create Request body with client identifiers in it
+	createSiteRulesBody := CreateSiteRuleBody{
+		Type:          "rateLimit",
+		GroupOperator: "all",
+		Enabled:       true,
+		Reason:        "Example site rule with client identifiers",
+		Expiration:    "",
+		Signal:        createSignalresp.TagName,
+		Conditions: []Condition{
+			{
+				Type:     "single",
+				Field:    "ip",
+				Operator: "equals",
+				Value:    "1.2.3.4",
+			},
+		},
+		Actions: []Action{
+			{
+				Type:   "logRequest",
+				Signal: createSignalresp.TagName,
+			},
+		},
+		RateLimit: &RateLimit{
+			Threshold: 100,
+			Interval:  1,
+			Duration:  600,
+			ClientIdentifiers: []ClientIdentifier{
+				{
+					Key:  "anything",
+					Name: "somethingelse",
+					Type: "requestHeader",
+				},
+			},
+		},
+	}
+
+	createResp, err := sc.CreateSiteRule(corp, site, createSiteRulesBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if createResp.RateLimit.ClientIdentifiers == nil || len(createResp.RateLimit.ClientIdentifiers) != 1 {
+		t.Errorf("expected one client identifier")
+	}
+
+	readResp, err := sc.GetSiteRuleByID(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if readResp.RateLimit.ClientIdentifiers == nil || len(readResp.RateLimit.ClientIdentifiers) != 1 {
+		t.Errorf("Expected to recieve one client identifier back")
+	}
+
+	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
