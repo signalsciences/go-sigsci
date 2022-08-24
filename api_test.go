@@ -1,20 +1,24 @@
 package sigsci
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
 
 type TestCreds struct {
-	email string
-	token string
-	corp  string
-	site  string
+	email                string
+	token                string
+	corp                 string
+	site                 string
+	testCloudWAFInstance bool
 }
 
 var testcreds = TestCreds{
@@ -22,6 +26,14 @@ var testcreds = TestCreds{
 	token: os.Getenv("SIGSCI_TOKEN"),
 	corp:  os.Getenv("SIGSCI_CORP"),
 	site:  os.Getenv("SIGSCI_SITE"),
+}
+
+func init() {
+	// Cloud WAF Instance tests are run if `SIGSCI_TEST_CLOUDWAFINSTANCE` is set to any of the folloiwng:  1, t, T, TRUE, true, True.
+	testCWAFInstance, err := strconv.ParseBool(os.Getenv("SIGSCI_TEST_CLOUDWAFINSTANCE"))
+	if err == nil && testCWAFInstance {
+		testcreds.testCloudWAFInstance = true
+	}
 }
 
 func ExampleClient_InviteUser() {
@@ -1136,6 +1148,197 @@ func TestCRUDCorpIntegrations(t *testing.T) {
 	}
 
 	err = sc.DeleteCorpIntegration(corp, readResp2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestCRUDListRestartCloudWAFInstance is an optional test. To run it, the environment variable `SIGSCI_TEST_CLOUDWAFINSTANCE`
+// must be set to a true value recognized by `strconv.ParseBool`. Additionally, to pass, the `go test` timeout must be
+// increased from the default 10m value, e.g. `go test -timeout 30m`. The `TestCRUDListRestartCloudWAFInstance` test by itself
+// has been known to run for 750.88s.
+func TestCRUDListRestartCloudWAFInstance(t *testing.T) {
+	if !testcreds.testCloudWAFInstance {
+		return
+	}
+
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+
+	durationDeploymentTimeout := 30 * time.Minute
+	durationPendingInstanceCheck := 20 * time.Second
+	statusDone := "done"
+
+	var createCWAFResponse CloudWAFInstance
+	var err error
+	createCWAFRequest := CloudWAFInstanceBody{
+		Name:                    "Test Cloud WAF Instance - Go SDK Test",
+		Description:             "Test Cloud WAF Instance created at " + time.Now().UTC().Format(time.RFC3339),
+		Region:                  "us-west-1",
+		TLSMinVersion:           "1.2",
+		UseUploadedCertificates: false,
+		WorkspaceConfigs: []CloudWAFInstanceWorkspaceConfig{{
+			SiteName:          site,
+			InstanceLocation:  "advanced",
+			ClientIPHeader:    "Fastly-Client-IP",
+			ListenerProtocols: []string{"https"},
+			Routes: []CloudWAFInstanceWorkspaceRoute{{
+				Domains:           []string{"example.net"},
+				Origin:            "https://example.com",
+				ConnectionPooling: true,
+				TLSHostOverride:   true,
+			}},
+		}},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), durationDeploymentTimeout)
+	for {
+		createCWAFResponse, err = sc.CreateCloudWAFInstance(corp, createCWAFRequest)
+		if err == nil {
+			cancel()
+			break
+		} else if err.Error() != "cannot create with pending instance" {
+			t.Fatal(err)
+		} else {
+			if ctx.Err() != nil {
+				t.Skip("call to CreateCloudWAFInstance blocked by pending instance that did not complete before timeout.")
+			}
+			time.Sleep(durationPendingInstanceCheck)
+			continue
+		}
+	}
+
+	if createCWAFRequest.Name != createCWAFResponse.Name {
+		t.Fail()
+	}
+
+	// `description`` is not populated in response
+	// `tls_min_version`` initially set to `unknown_tls_min` in create response.
+
+	if createCWAFRequest.Region != createCWAFResponse.Region {
+		t.Fail()
+	}
+	if createCWAFRequest.UseUploadedCertificates != createCWAFResponse.UseUploadedCertificates {
+		t.Fail()
+	}
+
+	var readCWAF CloudWAFInstance
+	ctx, cancel = context.WithTimeout(context.Background(), durationDeploymentTimeout)
+	defer cancel()
+	for {
+		readCWAF, err = sc.GetCloudWAFInstance(corp, createCWAFResponse.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if createCWAFResponse.ID != readCWAF.ID {
+			t.Fail()
+		}
+		if createCWAFRequest.Name != readCWAF.Name {
+			t.Fail()
+		}
+		if createCWAFRequest.Description != readCWAF.Description {
+			t.Fail()
+		}
+		if createCWAFRequest.Region != readCWAF.Region {
+			t.Fail()
+		}
+		if createCWAFRequest.TLSMinVersion != readCWAF.TLSMinVersion {
+			t.Fail()
+		}
+		if createCWAFRequest.UseUploadedCertificates != readCWAF.UseUploadedCertificates {
+			t.Fail()
+		}
+		if len(createCWAFRequest.WorkspaceConfigs) != len(readCWAF.WorkspaceConfigs) {
+			t.Fail()
+		}
+		if readCWAF.Deployment.Status == statusDone {
+			cancel()
+			break
+		}
+		if ctx.Err() != nil {
+			t.Skip("call to CreateCloudWAFInstance did not complete before timeout.")
+		}
+		time.Sleep(durationPendingInstanceCheck)
+	}
+
+	readCWAFs, err := sc.ListCloudWAFInstances(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(readCWAFs) == 0 {
+		t.Fail()
+	}
+	for _, cwaf := range readCWAFs {
+		if len(strings.TrimSpace(cwaf.ID)) == 0 {
+			t.Fail()
+		}
+	}
+
+	var updateCWAF CloudWAFInstanceBody
+	j, err := json.Marshal(readCWAF)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = json.Unmarshal(j, &updateCWAF)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newDesc := "Test Cloud WAF Instance updated at " + time.Now().UTC().Format(time.RFC3339)
+	updateCWAF.Description = newDesc
+
+	err = sc.UpdateCloudWAFInstance(corp, readCWAF.ID, updateCWAF)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), durationDeploymentTimeout)
+	defer cancel()
+	for {
+		readCWAF2, err := sc.GetCloudWAFInstance(corp, readCWAF.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if createCWAFResponse.ID != readCWAF2.ID {
+			t.Fail()
+		}
+		if newDesc != readCWAF2.Description {
+			t.Fail()
+		}
+		if readCWAF2.Deployment.Status == statusDone {
+			cancel()
+			break
+		}
+		if ctx.Err() != nil {
+			t.Skip("call to UpdateCloudWAFInstance did not complete before timeout.")
+		}
+		time.Sleep(durationPendingInstanceCheck)
+	}
+
+	// Executing restart will cause test to exceed 10 minutes, use `go test -timeout 30m ...` to increase timeout.
+	err = sc.RestartCloudWAFInstance(corp, readCWAF.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), durationDeploymentTimeout)
+	defer cancel()
+	for {
+		readCWAF3, err := sc.GetCloudWAFInstance(corp, readCWAF.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if readCWAF3.Deployment.Status == statusDone {
+			cancel()
+			break
+		}
+		if ctx.Err() != nil {
+			t.Skip("call to RestartCloudWAFInstance did not complete before timeout.")
+		}
+		time.Sleep(durationPendingInstanceCheck)
+	}
+
+	err = sc.DeleteCloudWAFInstance(corp, readCWAF.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
