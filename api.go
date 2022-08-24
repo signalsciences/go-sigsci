@@ -1229,17 +1229,12 @@ func (sc *Client) DeleteCorpIntegration(corpName, id string) error {
 
 // CloudWAFInstance contains the data for a Cloud WAF Instance read API call.
 type CloudWAFInstance struct {
-	ID                      string                            `json:"id"`
-	Name                    string                            `json:"name"`
-	Description             string                            `json:"description"`
-	Region                  string                            `json:"region"`
-	TLSMinVersion           string                            `json:"tlsMinVersion"`
-	WorkspaceConfigs        []CloudWAFInstanceWorkspaceConfig `json:"workspaceConfigs"`
-	Deployment              CloudWAFInstanceDeployment        `json:"deployment"`
-	UseUploadedCertificates bool                              `json:"useUploadedCertificates"`
-	CreatedBy               string                            `json:"createdBy"`
-	Created                 string                            `json:"created"`
-	UpdatedBy               string                            `json:"updatedBy"`
+	CloudWAFInstanceBody
+	ID         string                     `json:"id"`
+	Deployment CloudWAFInstanceDeployment `json:"deployment"`
+	CreatedBy  string                     `json:"createdBy"`
+	Created    string                     `json:"created"`
+	UpdatedBy  string                     `json:"updatedBy"`
 }
 
 // CloudWAFInstanceDeployment contains the data for a Cloud WAF instance eeployment.
