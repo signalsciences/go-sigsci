@@ -767,23 +767,23 @@ type requestsResponse struct {
 }
 
 // SearchRequests searches requests.
-func (sc *Client) SearchRequests(corpName, siteName string, query url.Values) (next string, requests []Request, err error) {
+func (sc *Client) SearchRequests(corpName, siteName string, query url.Values) (totalCount int, next string, requests []Request, err error) {
 	url := fmt.Sprintf("/v0/corps/%s/sites/%s/requests", corpName, siteName)
 	if query.Encode() != "" {
 		url += "?" + query.Encode()
 	}
 	resp, err := sc.doRequest("GET", url, "")
 	if err != nil {
-		return "", []Request{}, err
+		return 0, "", []Request{}, err
 	}
 
 	var r requestsResponse
 	err = json.Unmarshal(resp, &r)
 	if err != nil {
-		return "", []Request{}, err
+		return 0, "", []Request{}, err
 	}
 
-	return r.Next["uri"], r.Data, nil
+	return r.TotalCount, r.Next["uri"], r.Data, nil
 }
 
 // GetRequest gets a request by id.
@@ -2035,7 +2035,7 @@ type RateLimit struct {
 	ClientIdentifiers []ClientIdentifier `json:"clientIdentifiers"`
 }
 
-//CreateSiteRuleBody contains the rule for the site
+// CreateSiteRuleBody contains the rule for the site
 type CreateSiteRuleBody struct {
 	Type          string      `json:"type,omitempty,omitempty"` //(signal, request, rateLimit)
 	GroupOperator string      `json:"groupOperator,omitempty"`  //type: group - Conditions that must be matched when evaluating the request (all, any)
@@ -2098,7 +2098,7 @@ func (sc *Client) DeleteSiteRuleByID(corpName, siteName, id string) error {
 	return nil
 }
 
-//GetSiteRuleByID get a site rule by id
+// GetSiteRuleByID get a site rule by id
 func (sc *Client) GetSiteRuleByID(corpName, siteName, id string) (ResponseSiteRuleBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules/%s", corpName, siteName, id), "")
 	if err != nil {
@@ -2147,7 +2147,7 @@ type UpdateListBody struct {
 	Entries     Entries `json:"entries,omitempty"`     //List entries
 }
 
-//Entries List entries
+// Entries List entries
 type Entries struct {
 	Additions []string `json:"additions,omitempty"` //List additions
 	Deletions []string `json:"deletions,omitempty"` // List deletions
@@ -2162,13 +2162,13 @@ type ResponseListBody struct {
 	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
 }
 
-//ResponseListBodyList contains the returned list
+// ResponseListBodyList contains the returned list
 type ResponseListBodyList struct {
 	// TotalCount int                `json:"totalCount"`
 	Data []ResponseListBody `json:"data"` //Site List data
 }
 
-//CreateSiteList Create a site list
+// CreateSiteList Create a site list
 func (sc *Client) CreateSiteList(corpName, siteName string, body CreateListBody) (ResponseListBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2221,7 +2221,7 @@ func (sc *Client) GetSiteListByID(corpName, siteName string, id string) (Respons
 	return getResponseListBody(resp)
 }
 
-//GetAllSiteLists get all site lists
+// GetAllSiteLists get all site lists
 func (sc *Client) GetAllSiteLists(corpName, siteName string) (ResponseListBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/lists", corpName, siteName), "")
 	if err != nil {
@@ -2253,13 +2253,13 @@ type ResponseSiteRedactionBody struct {
 	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
 }
 
-//ResponseSiteRedactionBodyList redaction response list
+// ResponseSiteRedactionBodyList redaction response list
 type ResponseSiteRedactionBodyList struct {
 	// TotalCount int                    `json:"totalCount"`
 	Data []ResponseSiteRedactionBody `json:"data"` //Site Redaction data
 }
 
-//CreateSiteRedaction Create a site list
+// CreateSiteRedaction Create a site list
 func (sc *Client) CreateSiteRedaction(corpName, siteName string, body CreateSiteRedactionBody) (ResponseSiteRedactionBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2296,7 +2296,7 @@ func getResponseSiteRedactionBody(response []byte) (ResponseSiteRedactionBody, e
 	return responseBody, nil
 }
 
-//GetSiteRedactionByID get a site redaction by id
+// GetSiteRedactionByID get a site redaction by id
 func (sc *Client) GetSiteRedactionByID(corpName, siteName, id string) (ResponseSiteRedactionBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions/%s", corpName, siteName, id), "")
 	if err != nil {
@@ -2344,7 +2344,7 @@ func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteR
 	return getResponseSiteRedactionListBody(resp)
 }
 
-//CreateCorpRuleBody contains the rule of a Corp
+// CreateCorpRuleBody contains the rule of a Corp
 type CreateCorpRuleBody struct {
 	SiteNames     []string    `json:"siteNames,omitempty"`      //Sites with the rule available. Rules with a global corpScope will return '[]'.
 	Type          string      `json:"type,omitempty,omitempty"` //(request, signal)
@@ -2367,7 +2367,7 @@ type ResponseCorpRuleBody struct {
 	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
 }
 
-//ResponseCorpRuleBodyList list
+// ResponseCorpRuleBodyList list
 type ResponseCorpRuleBodyList struct {
 	TotalCount int                    `json:"totalCount"`
 	Data       []ResponseCorpRuleBody `json:"data"` //ResponseCorpRuleBody
@@ -2386,7 +2386,7 @@ func (sc *Client) CreateCorpRule(corpName string, body CreateCorpRuleBody) (Resp
 	return getResponseCorpRuleBody(resp)
 }
 
-//GetCorpRuleByID get a site rule by id
+// GetCorpRuleByID get a site rule by id
 func (sc *Client) GetCorpRuleByID(corpName, id string) (ResponseCorpRuleBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/rules/%s", corpName, id), "")
 	if err != nil {
@@ -2395,7 +2395,7 @@ func (sc *Client) GetCorpRuleByID(corpName, id string) (ResponseCorpRuleBody, er
 	return getResponseCorpRuleBody(resp)
 }
 
-//GetAllCorpRules get all corp rules
+// GetAllCorpRules get all corp rules
 func (sc *Client) GetAllCorpRules(corpName string) (ResponseCorpRuleBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/rules", corpName), "")
 	if err != nil {
@@ -2440,7 +2440,7 @@ func getResponseCorpRuleBody(response []byte) (ResponseCorpRuleBody, error) {
 	return responseCorpRule, nil
 }
 
-//CreateCorpList corp list
+// CreateCorpList corp list
 func (sc *Client) CreateCorpList(corpName string, body CreateListBody) (ResponseListBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2462,7 +2462,7 @@ func (sc *Client) GetCorpListByID(corpName string, id string) (ResponseListBody,
 	return getResponseListBody(resp)
 }
 
-//GetAllCorpLists get all corp lists
+// GetAllCorpLists get all corp lists
 func (sc *Client) GetAllCorpLists(corpName string) (ResponseListBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/lists", corpName), "")
 	if err != nil {
@@ -2498,18 +2498,18 @@ func (sc *Client) DeleteCorpListByID(corpName string, id string) error {
 	return nil
 }
 
-//CreateSignalTagBody create a signal tag
+// CreateSignalTagBody create a signal tag
 type CreateSignalTagBody struct {
 	ShortName   string `json:"shortName,omitempty"`   //The display name of the signal tag
 	Description string `json:"description,omitempty"` //Optional signal tag description
 }
 
-//UpdateSignalTagBody update a signal tag
+// UpdateSignalTagBody update a signal tag
 type UpdateSignalTagBody struct {
 	Description string `json:"description,omitempty"` //Optional signal tag description
 }
 
-//ResponseSignalTagBody response singnal tag
+// ResponseSignalTagBody response singnal tag
 type ResponseSignalTagBody struct {
 	CreateSignalTagBody
 	TagName       string    `json:"tagName,omitempty"`  //The identifier for the signal tag
@@ -2521,12 +2521,12 @@ type ResponseSignalTagBody struct {
 	Created       time.Time `json:"created,omitempty"`   //Created RFC3339 date time
 }
 
-//ResponseSignalTagBodyList response list
+// ResponseSignalTagBodyList response list
 type ResponseSignalTagBodyList struct {
 	Data []ResponseSignalTagBody `json:"data"` //ResponseSignalTagBody
 }
 
-//CreateCorpSignalTag create signal tag
+// CreateCorpSignalTag create signal tag
 func (sc *Client) CreateCorpSignalTag(corpName string, body CreateSignalTagBody) (ResponseSignalTagBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2539,7 +2539,7 @@ func (sc *Client) CreateCorpSignalTag(corpName string, body CreateSignalTagBody)
 	return getResponseSignalTagBody(resp)
 }
 
-//GetCorpSignalTagByID get corp signal by id
+// GetCorpSignalTagByID get corp signal by id
 func (sc *Client) GetCorpSignalTagByID(corpName string, id string) (ResponseSignalTagBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/tags/%s", corpName, id), "")
 	if err != nil {
@@ -2548,7 +2548,7 @@ func (sc *Client) GetCorpSignalTagByID(corpName string, id string) (ResponseSign
 	return getResponseSignalTagBody(resp)
 }
 
-//GetAllCorpSignalTags get all corp signals
+// GetAllCorpSignalTags get all corp signals
 func (sc *Client) GetAllCorpSignalTags(corpName string) (ResponseSignalTagBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/tags", corpName), "")
 	if err != nil {
@@ -2562,7 +2562,7 @@ func (sc *Client) GetAllCorpSignalTags(corpName string) (ResponseSignalTagBodyLi
 	return responseSignalTagBodyList, nil
 }
 
-//UpdateCorpSignalTagByID update corp signal
+// UpdateCorpSignalTagByID update corp signal
 func (sc *Client) UpdateCorpSignalTagByID(corpName string, id string, body UpdateSignalTagBody) (ResponseSignalTagBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2575,7 +2575,7 @@ func (sc *Client) UpdateCorpSignalTagByID(corpName string, id string, body Updat
 	return getResponseSignalTagBody(resp)
 }
 
-//DeleteCorpSignalTagByID delete signal tag by id
+// DeleteCorpSignalTagByID delete signal tag by id
 func (sc *Client) DeleteCorpSignalTagByID(corpName string, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/tags/%s", corpName, id), "")
 	if err != nil {
@@ -2592,7 +2592,7 @@ func getResponseSignalTagBody(response []byte) (ResponseSignalTagBody, error) {
 	return responseBody, nil
 }
 
-//CreateSiteSignalTag create signal tag
+// CreateSiteSignalTag create signal tag
 func (sc *Client) CreateSiteSignalTag(corpName, siteName string, body CreateSignalTagBody) (ResponseSignalTagBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2605,7 +2605,7 @@ func (sc *Client) CreateSiteSignalTag(corpName, siteName string, body CreateSign
 	return getResponseSignalTagBody(resp)
 }
 
-//GetSiteSignalTagByID get site signal by id
+// GetSiteSignalTagByID get site signal by id
 func (sc *Client) GetSiteSignalTagByID(corpName, siteName, id string) (ResponseSignalTagBody, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/tags/%s", corpName, siteName, id), "")
 	if err != nil {
@@ -2614,7 +2614,7 @@ func (sc *Client) GetSiteSignalTagByID(corpName, siteName, id string) (ResponseS
 	return getResponseSignalTagBody(resp)
 }
 
-//GetAllSiteSignalTags get all site signals
+// GetAllSiteSignalTags get all site signals
 func (sc *Client) GetAllSiteSignalTags(corpName, siteName string) (ResponseSignalTagBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/tags", corpName, siteName), "")
 	if err != nil {
@@ -2628,7 +2628,7 @@ func (sc *Client) GetAllSiteSignalTags(corpName, siteName string) (ResponseSigna
 	return responseSignalTagBodyList, nil
 }
 
-//UpdateSiteSignalTagByID update site signal
+// UpdateSiteSignalTagByID update site signal
 func (sc *Client) UpdateSiteSignalTagByID(corpName, siteName, id string, body UpdateSignalTagBody) (ResponseSignalTagBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2641,7 +2641,7 @@ func (sc *Client) UpdateSiteSignalTagByID(corpName, siteName, id string, body Up
 	return getResponseSignalTagBody(resp)
 }
 
-//DeleteSiteSignalTagByID delete signal tag by id
+// DeleteSiteSignalTagByID delete signal tag by id
 func (sc *Client) DeleteSiteSignalTagByID(corpName, siteName, id string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/tags/%s", corpName, siteName, id), "")
 	if err != nil {
@@ -2650,7 +2650,7 @@ func (sc *Client) DeleteSiteSignalTagByID(corpName, siteName, id string) error {
 	return nil
 }
 
-//ConfiguredDetectionField configuration for detection field in UpdateDetectionBody
+// ConfiguredDetectionField configuration for detection field in UpdateDetectionBody
 type ConfiguredDetectionField struct {
 	Name  string      `json:"name,omitempty"`
 	Value interface{} `json:"value"`
@@ -2664,7 +2664,7 @@ type DetectionUpdateBody struct {
 	Fields  []ConfiguredDetectionField `json:"fields"`
 }
 
-//AlertUpdateBody body needed to update an alert
+// AlertUpdateBody body needed to update an alert
 type AlertUpdateBody struct {
 	LongName             string `json:"longName"`
 	Interval             int    `json:"interval"`  // 1, 10 or 60
@@ -2686,14 +2686,14 @@ type SiteTemplateRuleBody struct {
 	AlertDeletes []Alert `json:"alertDeletes"`
 }
 
-//Detection basic struct for Detection
+// Detection basic struct for Detection
 type Detection struct {
 	DetectionUpdateBody
 	Created   *time.Time `json:"created,omitempty"`
 	CreatedBy string     `json:"created_by,omitempty"`
 }
 
-//Alert basic struct for an Alert
+// Alert basic struct for an Alert
 type Alert struct {
 	AlertUpdateBody
 	ID        string     `json:"id,omitempty"`
@@ -2704,7 +2704,7 @@ type Alert struct {
 	CreatedBy string     `json:"created_by,omitempty"`
 }
 
-//SiteTemplate basic struct for a site template
+// SiteTemplate basic struct for a site template
 type SiteTemplate struct {
 	Name       string      `json:"name,omitempty"`
 	Detections []Detection `json:"detections"`
@@ -2720,7 +2720,7 @@ func getResponseSiteTemplateBody(response []byte) (SiteTemplate, error) {
 	return responseBody, nil
 }
 
-//UpdateSiteTemplateRuleByID updates a site template rule
+// UpdateSiteTemplateRuleByID updates a site template rule
 func (sc *Client) UpdateSiteTemplateRuleByID(corpName, siteName, id string, body SiteTemplateRuleBody) (SiteTemplate, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -2733,7 +2733,7 @@ func (sc *Client) UpdateSiteTemplateRuleByID(corpName, siteName, id string, body
 	return getResponseSiteTemplateBody(resp)
 }
 
-//GetSiteTemplateRuleByID retrieves a site template rule
+// GetSiteTemplateRuleByID retrieves a site template rule
 func (sc *Client) GetSiteTemplateRuleByID(corpName, siteName, id string) (SiteTemplate, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/configuredtemplates/%s", corpName, siteName, id), "")
 	if err != nil {
