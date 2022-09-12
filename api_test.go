@@ -1344,6 +1344,92 @@ func TestCRUDListRestartCloudWAFInstance(t *testing.T) {
 	}
 }
 
+func TestCRUDListCloudWAFCertificate(t *testing.T) {
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+
+	createReqBody := UploadCloudWAFCertificateBody{
+		CloudWAFCertificateBase: CloudWAFCertificateBase{
+			Name:            "Go SDK - Create Test - www.example.com",
+			CertificateBody: "-----BEGIN CERTIFICATE-----\nMIICzDCCAbQCCQDV2NzCr6aPbDANBgkqhkiG9w0BAQsFADAoMQwwCgYDVQQLDAN3\nZWIxGDAWBgNVBAMMD3d3dy5leGFtcGxlLmNvbTAeFw0yMjA5MDMxNzE5MTVaFw0z\nMjA4MzExNzE5MTVaMCgxDDAKBgNVBAsMA3dlYjEYMBYGA1UEAwwPd3d3LmV4YW1w\nbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3xLllGg3Kl0S\nW16pOwH4VXyGTyByWk3gShoSnEXqWYwoGDF18YhGFFMYLUBNfbDG/jy8MLiKY20R\nBhV5hpObd4ZQq4PIlTl4ZNKy07CUPX/AufdbQzrFCQy96lXBVjo6gR10TD+F/CjC\ntOkM83dxtZoSPzH86eHteos41+apjgpfvVai3vkBNuZeeoxuERkxuGsfpcK2qWTg\nZFuncrWt6Plvlu70qGEIPtiFiPfQ8Rs2mdzKJEBC8nb4nqSWxIbY9Z87yS3X3C/A\n0xr0W4YxOLyCN94qr+Cc3Zl6DvjOv3LWAfv4qFXApWD9f8ynAzjojqfnXtavV6+D\n1SOdvMcTVQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQDG9lhmTU9EzE/B7hAhNPj2\nLHlRPj8ASnSpxBzWn6Acyu9hHJbGhkR8BnRPPjihH8kv+zRaRVYxhG2sb99qg168\nrPKWMbZI6ZvCQGKNjLpwUARwPOKeZ8zF+qyzxdpM9mMyzx9SI1QXDirA0BsUbAjm\nRfioqCdT54F8gFrH1+AnUX4Kf2euTS65bHRgegDiIsrAmwcRrzC8ev1SDiPMUkyC\ngoD1A0LHXLN1LMTs6qBXIkbCjYNRkPZBRagEu68CkwjT5H4vBIl39+Lcvo2WCBSG\nj4LzHGcDief95tMLhz0f5g0geV3ytrld5NSw0g1sEYJlDe8NA/aDi4gVviOt3Z5A\n-----END CERTIFICATE-----\n",
+		},
+		PrivateKey: "-----BEGIN PRIVATE KEY-----\nMIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDfEuWUaDcqXRJb\nXqk7AfhVfIZPIHJaTeBKGhKcRepZjCgYMXXxiEYUUxgtQE19sMb+PLwwuIpjbREG\nFXmGk5t3hlCrg8iVOXhk0rLTsJQ9f8C591tDOsUJDL3qVcFWOjqBHXRMP4X8KMK0\n6Qzzd3G1mhI/Mfzp4e16izjX5qmOCl+9VqLe+QE25l56jG4RGTG4ax+lwrapZOBk\nW6dyta3o+W+W7vSoYQg+2IWI99DxGzaZ3MokQELydviepJbEhtj1nzvJLdfcL8DT\nGvRbhjE4vII33iqv4JzdmXoO+M6/ctYB+/ioVcClYP1/zKcDOOiOp+de1q9Xr4PV\nI528xxNVAgMBAAECggEBAKPsP/aJipg/4oBwFE2/SdyP8CZvQnjnpzzs4eYiXm7F\nVqVIm1INAOpokWiXSxpk8CXdPbFTuqYLfKoK182z5Fe1xMv0wE4f+D+msTBsHtL+\ncQJ3KYJCyo225kwwDi2uBlXg7hglyfCdh07nvtOeX1nCyUvVEPRRSHB3pCLLZqdv\nysCCL4Sowuebcpec3w3nCuMTg+L1nxdk25C53EjsYGqMQgq0YX/CTo+M2X2Infac\n3Ig5bkQohaOz724L7mc63UaT9m36vgEUZfwndxxVUBHzxQ/tqr/O4XEKmSdFrExh\nyw+YFyP43WcE0m1lc2hYHKEwTM1QF1nVY60fyPJ0zCECgYEA9ljzLd8OjXKbhK7S\nHZWZyR1+Lo4HnrBsLgCJVIuGuWi6gDi8hsarYpTe8RVhgqBaudMpK+Eup76WuMBt\nF9RVpzkNBE7T+p1jkmCWOIkCpvf2/IoqlZ1ao5qu1fhK5HpnsYCTmUHhJmid3da9\neT34oR2WnvJ9s6fvqC1C6URtsE0CgYEA59B+pvJxvV8klPDfIgN31bcR90srHJTJ\nST3lnVMJNND6PJ3D96YJSHV0EIotqyXlv/droqerhNJ+gNOHvrXMKTJ7udCDQKfW\n6IFiWaRW1SkqUEXlv59JI6Ip3B9Rfi3w3rPhNLAi/7GjSm33C+OgsMVq9ZBTMjR6\nqnS872CwsykCgYEAq22+3D8K+3ezraOSaDAA8qlpc7A2sUGIJoMNDh6CRGgS0MOq\nvgdmoJWEhzQfxS0dtY6yaeyr8ON6M1sFD74dVN8opcTNUutPrT81imYdyF9qKtdj\nRvZXat5rqE6+nzxnCGi3TcFAkt/ea8/RzptHd6cFd9q7itfkuJ22oGmUA0kCgYEA\nzmvUO+kr6wtr0czjhLA952rLbr/ateqviq65ZmxoiEWGbq+1rzKElacxIQFKRVrL\nyTMS/5X6n52o1CKIgAP2tsCjeAT6u3o5XnTIFTbHs6yiZzS2rvmx8S8Xw1GICanz\nEPxwj7BAmhueYkqlcErT7lT9N4m667vbdynYi/g3oHECgYEA5dCjPFl94ZGStHF2\n4+cI1NCbVTnQApFI1+Vmd4lED619KSnpk/77TaYTh2I8gsK3OZP4crvee5aL41TJ\nY20XmAq/Dvv3g7QR97ND/AghEU8nnpZo1fgHzCcyZSkaBzMFeYdsfaGDncM56I0B\n65yblwYq9Vyzy3hBFY6XGaFdnZ0=\n-----END PRIVATE KEY-----\n",
+	}
+
+	createResp, err := sc.UploadCloudWAFCertificate(corp, createReqBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(strings.TrimSpace(createResp.ID)) == 0 {
+		t.Fail()
+	}
+
+	readResp, err := sc.GetCloudWAFCertificate(corp, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if readResp.ID != createResp.ID {
+		t.Fail()
+	}
+	if readResp.CertificateBody != createReqBody.CertificateBody {
+		t.Fail()
+	}
+	if readResp.CertificateChain != createReqBody.CertificateChain {
+		t.Fail()
+	}
+	if readResp.CommonName != "www.example.com" {
+		t.Fail()
+	}
+	if len(readResp.Domains) != 1 || readResp.Domains[0] != "www.example.com" {
+		t.Fail()
+	}
+	if readResp.ExpiresAt != "2032-08-31T17:19:15Z" {
+		t.Fail()
+	}
+	if readResp.Fingerprint != "d3d246a79291ce3448f13b99d34d09066861c71a" {
+		t.Fail()
+	}
+	if readResp.Name != createReqBody.Name {
+		t.Fail()
+	}
+	if readResp.Status != "active" {
+		t.Fail()
+	}
+	if len(readResp.SubjectAlternativeNames) != 0 {
+		t.Fail()
+	}
+
+	listResp, err := sc.ListCloudWAFCertificates(corp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listResp) == 0 {
+		t.Fail()
+	}
+
+	updateName := "Go SDK - Update Test - www.example.com"
+	updateResp, err := sc.UpdateCloudWAFCertificate(corp, createResp.ID, UpdateCloudWAFCertificateBody{
+		Name: updateName,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updateResp.Name != updateName {
+		t.Fail()
+	}
+	if updateResp.ID != createResp.ID {
+		t.Fail()
+	}
+	if updateResp.Fingerprint != "d3d246a79291ce3448f13b99d34d09066861c71a" {
+		t.Fail()
+	}
+
+	err = sc.DeleteCloudWAFCertificate(corp, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCRUDSiteMonitorDashboard(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp

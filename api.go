@@ -1359,6 +1359,110 @@ func (sc *Client) RestartCloudWAFInstance(corpName, id string) error {
 	return err
 }
 
+// CloudWAFCertificate contains the data for a Cloud WAF Certificate read API call.
+type CloudWAFCertificateBase struct {
+	Name             string `json:"name"`
+	CertificateBody  string `json:"certificateBody"`
+	CertificateChain string `json:"certificateChain"`
+}
+
+type CloudWAFCertificate struct {
+	CloudWAFCertificateBase
+	ID                      string
+	CommonName              string
+	SubjectAlternativeNames []string
+	Domains                 []string
+	Fingerprint             string
+	ExpiresAt               string
+	Status                  string
+	CreatedBy               string
+	Created                 string
+	UpdatedBy               string
+	UpdatedAt               string
+}
+
+type UploadCloudWAFCertificateBody struct {
+	CloudWAFCertificateBase
+	PrivateKey string
+}
+
+type ResponseCloudWAFCertificateBody struct {
+	ID string `json:"id"`
+}
+
+type UpdateCloudWAFCertificateBody struct {
+	Name string `json:"name"`
+}
+
+type listCloudWAFCertificateResponse struct {
+	Data []CloudWAFCertificate `json:"data"`
+}
+
+// ListCloudWAFCertificates lists Cloud WAF certificates.
+func (sc *Client) ListCloudWAFCertificates(corpName string) ([]CloudWAFCertificate, error) {
+	resp, err := sc.doRequest(http.MethodGet, fmt.Sprintf("/v0/corps/%s/cloudwafCerts", corpName), "")
+	if err != nil {
+		return []CloudWAFCertificate{}, err
+	}
+
+	var cwr listCloudWAFCertificateResponse
+	err = json.Unmarshal(resp, &cwr)
+	if err != nil {
+		return []CloudWAFCertificate{}, err
+	}
+
+	return cwr.Data, nil
+}
+
+// UploadCloudWAFCertificate uploads a Cloud WAF certificate and private key.
+func (sc *Client) UploadCloudWAFCertificate(corpName string, body UploadCloudWAFCertificateBody) (ResponseCloudWAFCertificateBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseCloudWAFCertificateBody{}, err
+	}
+
+	resp, err := sc.doRequest(http.MethodPost, fmt.Sprintf("/v0/corps/%s/cloudwafCerts", corpName), string(b))
+	if err != nil {
+		return ResponseCloudWAFCertificateBody{}, err
+	}
+
+	var cwr ResponseCloudWAFCertificateBody
+	return cwr, json.Unmarshal(resp, &cwr)
+}
+
+// GetCloudWAFCertificate gets a Cloud WAF certificate by id.
+func (sc *Client) GetCloudWAFCertificate(corpName, id string) (CloudWAFCertificate, error) {
+	resp, err := sc.doRequest(http.MethodGet, fmt.Sprintf("/v0/corps/%s/cloudwafCerts/%s", corpName, id), "")
+	if err != nil {
+		return CloudWAFCertificate{}, err
+	}
+
+	var cwr CloudWAFCertificate
+	return cwr, json.Unmarshal(resp, &cwr)
+}
+
+// UpdateCloudWAFCertificate updates a Cloud WAF certificate by id.
+func (sc *Client) UpdateCloudWAFCertificate(corpName, id string, body UpdateCloudWAFCertificateBody) (CloudWAFCertificate, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return CloudWAFCertificate{}, err
+	}
+
+	bytes, err := sc.doRequest(http.MethodPut, fmt.Sprintf("/v0/corps/%s/cloudwafCerts/%s", corpName, id), string(b))
+	if err != nil {
+		return CloudWAFCertificate{}, err
+	}
+	var cwr CloudWAFCertificate
+	return cwr, json.Unmarshal(bytes, &cwr)
+}
+
+// DeleteCloudWAFCertificate deletes a Cloud WAF certificate by id.
+func (sc *Client) DeleteCloudWAFCertificate(corpName, id string) error {
+	_, err := sc.doRequest(http.MethodDelete, fmt.Sprintf("/v0/corps/%s/cloudwafCerts/%s", corpName, id), "")
+
+	return err
+}
+
 // Param is a whitelisted parameter.
 type Param struct {
 	ID        string
