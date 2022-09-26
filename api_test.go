@@ -261,7 +261,7 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 		t.Errorf("CreateSiteRules got: %v expected %v", updateResp, updateSiteRuleBody)
 	}
 
-	readall, err := sc.GetAllSiteRules(corp, site)
+	readall, err := sc.GetAllSiteRules(corp, site, 20, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,14 +336,14 @@ func TestDeleteAllSiteRules(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp
 	site := testcreds.site
-	respList, err := sc.GetAllSiteRules(corp, site)
+	respList, err := sc.GetAllSiteRules(corp, site, 20, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, rule := range respList.Data {
 		sc.DeleteSiteRuleByID(corp, site, rule.ID)
 	}
-	respList, err = sc.GetAllSiteRules(corp, site)
+	respList, err = sc.GetAllSiteRules(corp, site, 20, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
