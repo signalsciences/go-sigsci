@@ -164,11 +164,13 @@ func compareSiteRuleBody(sr1, sr2 CreateSiteRuleBody) bool {
 	if sr1.GroupOperator != sr2.GroupOperator {
 		return false
 	}
+	if sr1.RequestLogging != sr2.RequestLogging {
+		return false
+	}
 	return true
 }
 
 func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
-
 	createSiteRulesBody := CreateSiteRuleBody{
 		Type:          "signal",
 		GroupOperator: "all",
@@ -1742,6 +1744,129 @@ func TestCreateSiteRulesRateLimitClientIdentifiers(t *testing.T) {
 	}
 	if readResp.RateLimit.ClientIdentifiers == nil || len(readResp.RateLimit.ClientIdentifiers) != 1 {
 		t.Errorf("Expected to recieve one client identifier back")
+	}
+
+	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCRUDSiteRequestRule(t *testing.T) {
+	createSiteRulesBody := CreateSiteRuleBody{
+		Type:           "request",
+		GroupOperator:  "all",
+		Enabled:        true,
+		Reason:         "Example site rule",
+		RequestLogging: "none",
+		Expiration:     "",
+		Conditions: []Condition{
+			{
+				Type:     "single",
+				Field:    "ip",
+				Operator: "equals",
+				Value:    "1.2.3.4",
+			},
+			{
+				Type:          "group",
+				GroupOperator: "any",
+				Conditions: []Condition{
+					{
+						Type:     "single",
+						Field:    "ip",
+						Operator: "equals",
+						Value:    "5.6.7.8",
+					},
+				},
+			},
+		},
+		Actions: []Action{
+			{
+				Type: "block",
+			},
+		},
+	}
+
+	sc := NewTokenClient(testcreds.email, testcreds.token)
+	corp := testcreds.corp
+	site := testcreds.site
+
+	createResp, err := sc.CreateSiteRule(corp, site, createSiteRulesBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !compareSiteRuleBody(createSiteRulesBody, createResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRules got:\n %#v\n want\n %#v", createResp, createSiteRulesBody)
+	}
+
+	readResp, err := sc.GetSiteRuleByID(corp, site, createResp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !compareSiteRuleBody(createSiteRulesBody, readResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRules got:\n %#v\n want\n %#v", createResp, createSiteRulesBody)
+	}
+
+	updateSiteRuleBody := CreateSiteRuleBody{
+		Type:           "request",
+		GroupOperator:  "all",
+		Enabled:        true,
+		Reason:         "Example site rule",
+		Expiration:     "",
+		RequestLogging: "none",
+		Conditions: []Condition{
+			{
+				Type:     "single",
+				Field:    "ip",
+				Operator: "equals",
+				Value:    "1.2.3.4",
+			},
+			{
+				Type:          "group",
+				GroupOperator: "any",
+				Conditions: []Condition{
+					{
+						Type:     "single",
+						Field:    "ip",
+						Operator: "equals",
+						Value:    "9.10.11.12",
+					},
+				},
+			},
+		},
+		Actions: []Action{
+			{
+				Type: "block",
+			},
+		},
+	}
+
+	updateResp, err := sc.UpdateSiteRuleByID(corp, site, createResp.ID, updateSiteRuleBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !compareSiteRuleBody(updateSiteRuleBody, updateResp.CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRules got:\n %#v\n want %#v", updateResp, updateSiteRuleBody)
+	}
+
+	readall, err := sc.GetAllSiteRules(corp, site)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(readall.Data) != 1 {
+		t.Error()
+	}
+
+	if readall.TotalCount != 1 {
+		t.Error()
+	}
+
+	if !compareSiteRuleBody(updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody) {
+		t.Error("response from GET site rules != update site rule body")
 	}
 
 	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
