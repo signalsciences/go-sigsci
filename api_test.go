@@ -1826,11 +1826,11 @@ func TestCRUDSiteRequestRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(readall.Data) != 1 {
+	if len(readall.Data) != 0 {
 		t.Error()
 	}
 
-	if readall.TotalCount != 1 {
+	if readall.TotalCount != 0 {
 		t.Error()
 	}
 
