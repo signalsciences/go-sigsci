@@ -1809,39 +1809,8 @@ func TestCRUDSiteRequestRule(t *testing.T) {
 		t.Errorf("CreateSiteRules got:\n %#v\n want\n %#v", createResp, createSiteRulesBody)
 	}
 
-	updateSiteRuleBody := CreateSiteRuleBody{
-		Type:           "request",
-		GroupOperator:  "all",
-		Enabled:        true,
-		Reason:         "Example site rule",
-		Expiration:     "",
-		RequestLogging: "none",
-		Conditions: []Condition{
-			{
-				Type:     "single",
-				Field:    "ip",
-				Operator: "equals",
-				Value:    "1.2.3.4",
-			},
-			{
-				Type:          "group",
-				GroupOperator: "any",
-				Conditions: []Condition{
-					{
-						Type:     "single",
-						Field:    "ip",
-						Operator: "equals",
-						Value:    "9.10.11.12",
-					},
-				},
-			},
-		},
-		Actions: []Action{
-			{
-				Type: "block",
-			},
-		},
-	}
+	updateSiteRuleBody := createSiteRulesBody
+	updateSiteRuleBody.Reason = "a new reason"
 
 	updateResp, err := sc.UpdateSiteRuleByID(corp, site, createResp.ID, updateSiteRuleBody)
 	if err != nil {
