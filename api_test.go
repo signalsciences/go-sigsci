@@ -1755,7 +1755,7 @@ func TestCreateSiteRulesRateLimitClientIdentifiers(t *testing.T) {
 		t.Fatal(err)
 	}
 	if readResp.RateLimit.ClientIdentifiers == nil || len(readResp.RateLimit.ClientIdentifiers) != 1 {
-		t.Errorf("Expected to recieve one client identifier back")
+		t.Errorf("Expected to receive one client identifier back")
 	}
 
 	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
