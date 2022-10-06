@@ -581,13 +581,14 @@ func (sc *Client) ListCustomAlerts(corpName, siteName string) ([]CustomAlert, er
 
 // CustomAlertBody is the body for creating a custom alert.
 type CustomAlertBody struct {
-	TagName           string `json:"tagName"`
-	LongName          string `json:"longName"`
-	Interval          int    `json:"interval"`
-	Threshold         int    `json:"threshold"`
-	Enabled           bool   `json:"enabled"`
-	Action            string `json:"action"`
-	SkipNotifications bool   `json:"skipNotifications"`
+	TagName              string `json:"tagName"`
+	LongName             string `json:"longName"`
+	Interval             int    `json:"interval"`
+	Threshold            int    `json:"threshold"`
+	Enabled              bool   `json:"enabled"`
+	Action               string `json:"action"`
+	SkipNotifications    bool   `json:"skipNotifications"`
+	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
 }
 
 // CreateCustomAlert creates a custom alert.

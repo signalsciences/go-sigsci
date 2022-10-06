@@ -556,12 +556,13 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	site := testcreds.site
 
 	createCustomAlert := CustomAlertBody{
-		TagName:   "SQLI",
-		LongName:  "Example Alert",
-		Interval:  1,
-		Threshold: 10,
-		Enabled:   true,
-		Action:    "flagged",
+		TagName:              "SQLI",
+		LongName:             "Example Alert",
+		Interval:             1,
+		Threshold:            10,
+		Enabled:              true,
+		Action:               "flagged",
+		BlockDurationSeconds: 3600,
 	}
 	createresp, err := sc.CreateCustomAlert(corp, site, createCustomAlert)
 	if err != nil {
@@ -586,6 +587,9 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	if createCustomAlert.Action != createresp.Action {
 		t.Error("tag names not equal")
 	}
+	if createCustomAlert.BlockDurationSeconds != createresp.BlockDurationSeconds {
+		t.Error("block durations not equal")
+	}
 
 	readresp, err := sc.GetCustomAlert(corp, site, createresp.ID)
 	if err != nil {
@@ -609,14 +613,18 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	if createCustomAlert.Action != readresp.Action {
 		t.Error("tag names not equal")
 	}
+	if createCustomAlert.BlockDurationSeconds != readresp.BlockDurationSeconds {
+		t.Error("block durations not equal")
+	}
 
 	updateCustomAlert := CustomAlertBody{
-		TagName:   "SQLI",
-		LongName:  "Example Alert Updated",
-		Interval:  10,
-		Threshold: 10,
-		Enabled:   true,
-		Action:    "flagged",
+		TagName:              "SQLI",
+		LongName:             "Example Alert Updated",
+		Interval:             10,
+		Threshold:            10,
+		Enabled:              true,
+		Action:               "flagged",
+		BlockDurationSeconds: 3600,
 	}
 	updateResp, err := sc.UpdateCustomAlert(corp, site, readresp.ID, updateCustomAlert)
 
@@ -642,13 +650,16 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	if updateCustomAlert.Action != updateResp.Action {
 		t.Error("tag names not equal")
 	}
+	if updateCustomAlert.BlockDurationSeconds != updateResp.BlockDurationSeconds {
+		t.Error("block durations not equal")
+	}
 
 	allalerts, err := sc.ListCustomAlerts(corp, site)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(allalerts) != 1 {
-		t.Error("alerts length incorrect. make sure none we added outside")
+		t.Error("alerts length incorrect. make sure none were added outside")
 	}
 	if updateCustomAlert.TagName != allalerts[0].TagName {
 		t.Error("tag names not equal")
@@ -667,6 +678,9 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 	}
 	if updateCustomAlert.Action != allalerts[0].Action {
 		t.Error("action not equal")
+	}
+	if updateCustomAlert.BlockDurationSeconds != allalerts[0].BlockDurationSeconds {
+		t.Error("block durations not equal")
 	}
 
 	err = sc.DeleteCustomAlert(corp, site, createresp.ID)
