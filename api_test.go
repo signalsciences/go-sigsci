@@ -1834,8 +1834,14 @@ func TestCRUDSiteRequestRule(t *testing.T) {
 		t.Error()
 	}
 
-	if !compareSiteRuleBody(updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody) {
-		t.Error("response from GET site rules != update site rule body")
+	foundUpdatedRule := false
+	for _, r := range readall.Data {
+		if r.ID == updateResp.ID {
+			foundUpdatedRule = true
+		}
+	}
+	if !foundUpdatedRule {
+		t.Error("updated rule not found in GetAllSiteRules")
 	}
 
 	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
