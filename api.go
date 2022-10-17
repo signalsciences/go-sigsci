@@ -2140,17 +2140,18 @@ type RateLimit struct {
 	ClientIdentifiers []ClientIdentifier `json:"clientIdentifiers"`
 }
 
-//CreateSiteRuleBody contains the rule for the site
+// CreateSiteRuleBody contains the rule for the site
 type CreateSiteRuleBody struct {
-	Type          string      `json:"type,omitempty,omitempty"` //(signal, request, rateLimit)
-	GroupOperator string      `json:"groupOperator,omitempty"`  //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Enabled       bool        `json:"enabled,omitempty"`
-	Reason        string      `json:"reason,omitempty"`     //Description of the rule
-	Signal        string      `json:"signal,omitempty"`     //The signal id of the signal being excluded. Null unless type==request
-	Expiration    string      `json:"expiration,omitempty"` //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
-	Conditions    []Condition `json:"conditions,omitempty"`
-	Actions       []Action    `json:"actions,omitempty"`
-	RateLimit     *RateLimit  `json:"rateLimit,omitempty"` //Null unless type==rateLimit
+	Type           string      `json:"type,omitempty,omitempty"` //(signal, request, rateLimit)
+	GroupOperator  string      `json:"groupOperator,omitempty"`  //type: group - Conditions that must be matched when evaluating the request (all, any)
+	Enabled        bool        `json:"enabled,omitempty"`
+	Reason         string      `json:"reason,omitempty"`     //Description of the rule
+	Signal         string      `json:"signal,omitempty"`     //The signal id of the signal being excluded. Null unless type==request
+	Expiration     string      `json:"expiration,omitempty"` //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
+	Conditions     []Condition `json:"conditions,omitempty"`
+	Actions        []Action    `json:"actions,omitempty"`
+	RateLimit      *RateLimit  `json:"rateLimit,omitempty"` //Null unless type==rateLimit
+	RequestLogging string      `json:"requestlogging,omitempty"`
 }
 
 // ResponseSiteRuleBody contains the response from creating the rule
