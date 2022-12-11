@@ -110,6 +110,12 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		if resp.StatusCode != http.StatusOK {
 			return body, errMsg(body)
 		}
+	case "PUT":
+		switch resp.StatusCode {
+		case http.StatusOK:
+		default:
+			return body, errMsg(body)
+		}
 	case "POST":
 		switch resp.StatusCode {
 		case http.StatusOK, http.StatusCreated, http.StatusNoContent:
@@ -2259,6 +2265,12 @@ type Entries struct {
 	Deletions []string `json:"deletions,omitempty"` // List deletions
 }
 
+// ReplaceListBody replace list
+type ReplaceListBody struct {
+	Description string   `json:"description,omitempty"` //Optional list description
+	Entries     []string `json:"entries,omitempty"`     //List entries
+}
+
 // ResponseListBody contains the response from creating the list
 type ResponseListBody struct {
 	CreateListBody
@@ -2308,6 +2320,20 @@ func (sc *Client) UpdateSiteListByID(corpName, siteName string, id string, body 
 	}
 	return getResponseListBody(resp)
 }
+
+// ReplaceSiteListByID replaces a site list and returns a response
+func (sc *Client) ReplaceSiteListByID(corpName, siteName string, id string, body ReplaceListBody) (ResponseListBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseListBody{}, err
+	}
+	resp, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/lists/%s", corpName, siteName, id), string(b))
+	if err != nil {
+		return ResponseListBody{}, err
+	}
+	return getResponseListBody(resp)
+}
+
 
 // DeleteSiteListByID deletes a rule and returns an error
 func (sc *Client) DeleteSiteListByID(corpName, siteName string, id string) error {

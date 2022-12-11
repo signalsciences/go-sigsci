@@ -370,7 +370,7 @@ func compareSiteListBody(sl1, sl2 CreateListBody) bool {
 	return true
 }
 
-func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
+func TestCreateReadUpdateReplaceDeleteSiteList(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp
 	site := testcreds.site
@@ -437,6 +437,37 @@ func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
 	if !reflect.DeepEqual(updatedSiteListBody, readall.Data[0].CreateListBody) {
 		t.Error("Site list body not equal")
 	}
+
+	replaceSiteListBody := ReplaceListBody{
+		Description: "Some IPs we using to replace a list",
+		Entries:     []string{"3.4.5.6", "4.5.6.7"},
+	}
+
+	replaceresp, err := sc.ReplaceSiteListByID(corp, site, readresp.ID, replaceSiteListBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	replacedSiteListBody := CreateListBody{
+		Name:        "My new list",
+		Type:        "ip",
+		Description: "Some IPs we using to replace a list",
+		Entries: []string{
+			"3.4.5.6",
+			"4.5.6.7",
+		},
+	}
+	if !reflect.DeepEqual(replacedSiteListBody, replaceresp.CreateListBody) {
+		t.Error("Site list body not equal")
+	}
+	readall, err = sc.GetAllSiteLists(corp, site)
+	if len(readall.Data) != 1 {
+		t.Error()
+	}
+	if !reflect.DeepEqual(replacedSiteListBody, readall.Data[0].CreateListBody) {
+		t.Error("Site list body not equal")
+	}
+
 	err = sc.DeleteSiteListByID(corp, site, readresp.ID)
 	if err != nil {
 		t.Fatal(err)
