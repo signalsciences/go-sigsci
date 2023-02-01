@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -100,7 +99,7 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2142,8 +2141,8 @@ type RateLimit struct {
 
 // CreateSiteRuleBody contains the rule for the site
 type CreateSiteRuleBody struct {
-	Type           string      `json:"type,omitempty,omitempty"` //(signal, request, rateLimit)
-	GroupOperator  string      `json:"groupOperator,omitempty"`  //type: group - Conditions that must be matched when evaluating the request (all, any)
+	Type           string      `json:"type,omitempty"`          //(signal, request, rateLimit)
+	GroupOperator  string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
 	Enabled        bool        `json:"enabled,omitempty"`
 	Reason         string      `json:"reason,omitempty"`     //Description of the rule
 	Signal         string      `json:"signal,omitempty"`     //The signal id of the signal being excluded. Null unless type==request
@@ -2380,10 +2379,6 @@ func (sc *Client) CreateSiteRedaction(corpName, siteName string, body CreateSite
 	return redactionsData.Data[len(redactionsData.Data)-1], err
 }
 
-func splitTuple(tuple ...interface{}) []interface{} {
-	return tuple
-}
-
 func getResponseSiteRedactionListBody(response []byte) (ResponseSiteRedactionBodyList, error) {
 	var responseBody ResponseSiteRedactionBodyList
 	err := json.Unmarshal(response, &responseBody)
@@ -2452,9 +2447,9 @@ func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteR
 
 // CreateCorpRuleBody contains the rule of a Corp
 type CreateCorpRuleBody struct {
-	SiteNames     []string    `json:"siteNames,omitempty"`      //Sites with the rule available. Rules with a global corpScope will return '[]'.
-	Type          string      `json:"type,omitempty,omitempty"` //(request, signal)
-	CorpScope     string      `json:"corpScope,omitempty"`      //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
+	SiteNames     []string    `json:"siteNames,omitempty"` //Sites with the rule available. Rules with a global corpScope will return '[]'.
+	Type          string      `json:"type,omitempty"`      //(request, signal)
+	CorpScope     string      `json:"corpScope,omitempty"` //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
 	Enabled       bool        `json:"enabled,omitempty"`
 	GroupOperator string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
 	Signal        string      `json:"signal,omitempty"`        //The signal id of the signal being excluded
@@ -2855,27 +2850,15 @@ type PrimaryAgentKey struct {
 	SecretKey string
 }
 
-type primaryAgentKeyResp struct {
-	Name      string `json:"name"`
-	AccessKey string `json:"accessKey"`
-	SecretKey string `json:"secretKey"`
-}
-
 // GetSitePrimaryAgentKey retrieve the primary agent keys
 func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgentKey, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/keys", corpName, siteName), "")
 	if err != nil {
 		return PrimaryAgentKey{}, err
 	}
-	var responseBody primaryAgentKeyResp
-	if err = json.Unmarshal(resp, &responseBody); err != nil {
+	var primaryKey PrimaryAgentKey
+	if err = json.Unmarshal(resp, &primaryKey); err != nil {
 		return PrimaryAgentKey{}, err
-	}
-
-	primaryKey := PrimaryAgentKey{
-		Name:      responseBody.Name,
-		SecretKey: responseBody.SecretKey,
-		AccessKey: responseBody.AccessKey,
 	}
 
 	return primaryKey, nil

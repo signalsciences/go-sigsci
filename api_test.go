@@ -95,19 +95,19 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if "Test Site" != siteresponse.DisplayName {
+	if siteresponse.DisplayName != "Test Site" {
 		t.Errorf("Displayname got %s expected %s", siteresponse.DisplayName, "Test Site")
 	}
-	if "block" != siteresponse.AgentLevel {
+	if siteresponse.AgentLevel != "block" {
 		t.Errorf("AgentLevel got %s expected %s", siteresponse.AgentLevel, "block")
 	}
-	if 406 != siteresponse.BlockHTTPCode {
+	if siteresponse.BlockHTTPCode != 406 {
 		t.Errorf("BlockHTTPCode got %d expected %d", siteresponse.BlockHTTPCode, 406)
 	}
-	if 86400 != siteresponse.BlockDurationSeconds {
+	if siteresponse.BlockDurationSeconds != 86400 {
 		t.Errorf("BlockDurationSeconds got %d expected %d", siteresponse.BlockDurationSeconds, 86400)
 	}
-	if "" != siteresponse.AgentAnonMode {
+	if siteresponse.AgentAnonMode != "" {
 		t.Errorf("AgentAnonMode got %s expected %s", siteresponse.AgentAnonMode, "")
 	}
 
@@ -123,19 +123,19 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if "Test Site 2" != updateSite.DisplayName {
+	if updateSite.DisplayName != "Test Site 2" {
 		t.Errorf("Displayname got %s expected %s", updateSite.DisplayName, "Test Site 2")
 	}
-	if "off" != updateSite.AgentLevel {
+	if updateSite.AgentLevel != "off" {
 		t.Errorf("AgentLevel got %s expected %s", updateSite.AgentLevel, "off")
 	}
-	if 406 != updateSite.BlockHTTPCode {
+	if updateSite.BlockHTTPCode != 406 {
 		t.Errorf("BlockHTTPCode got %d expected %d", updateSite.BlockHTTPCode, 406)
 	}
-	if 86402 != updateSite.BlockDurationSeconds {
+	if updateSite.BlockDurationSeconds != 86402 {
 		t.Errorf("BlockDurationSeconds got %d expected %d", updateSite.BlockDurationSeconds, 86402)
 	}
-	if "EU" != updateSite.AgentAnonMode {
+	if updateSite.AgentAnonMode != "EU" {
 		t.Errorf("AgentAnonMode got %s expected %s", updateSite.AgentAnonMode, "EU")
 	}
 
@@ -273,8 +273,9 @@ func TestCreateReadUpdateDeleteSiteRules(t *testing.T) {
 	if readall.TotalCount != 1 {
 		t.Error()
 	}
-	if !compareSiteRuleBody(updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody) {
 
+	if !compareSiteRuleBody(updateSiteRuleBody, readall.Data[0].CreateSiteRuleBody) {
+		t.Errorf("CreateSiteRules update site rule body = %v, want %v", updateSiteRuleBody, readall.Data)
 	}
 
 	err = sc.DeleteSiteRuleByID(corp, site, createResp.ID)
@@ -352,22 +353,6 @@ func TestDeleteAllSiteRules(t *testing.T) {
 	if len(respList.Data) != 0 {
 		t.Error()
 	}
-}
-
-func compareSiteListBody(sl1, sl2 CreateListBody) bool {
-	if sl1.Type != sl2.Type {
-		return false
-	}
-	if sl1.Description != sl2.Description {
-		return false
-	}
-	if sl1.Name != sl2.Name {
-		return false
-	}
-	if len(sl1.Entries) != len(sl2.Entries) {
-		return false
-	}
-	return true
 }
 
 func TestCreateReadUpdateDeleteSiteList(t *testing.T) {
