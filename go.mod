@@ -1,3 +1,3 @@
 module github.com/signalsciences/go-sigsci
 
-go 1.14
+go 1.19
