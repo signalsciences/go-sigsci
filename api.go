@@ -22,8 +22,9 @@ func SetAPIUrl(theURL string) {
 
 // Client is the API client
 type Client struct {
-	email string
-	token string
+	email     string
+	token     string
+	fastlyKey string
 }
 
 // NewClient authenticates and returns a Client API client
@@ -35,6 +36,10 @@ func NewClient(email, password string) (Client, error) {
 	}
 
 	return sc, nil
+}
+
+func (c *Client) SetFastlyKey(fastlyKey string) {
+	c.fastlyKey = fastlyKey
 }
 
 // NewTokenClient creates a Client using token authentication
@@ -88,6 +93,10 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		req.Header.Set("X-API-Token", sc.token)
 	} else {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
+	}
+
+	if sc.fastlyKey != "" {
+		req.Header.Set("Fastly-Key", sc.fastlyKey)
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -2862,4 +2871,54 @@ func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgen
 	}
 
 	return primaryKey, nil
+}
+
+// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
+func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
+	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
+
+	return err
+}
+
+// DeleteEdgeDeployment deletes an edge deployment
+func (sc *Client) DeleteEdgeDeployment(corpName, siteName string) error {
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
+
+	return err
+}
+
+// CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
+// Edge Deployment and pre-configures the Fastly service with an edge dictionary and custom VCL.
+func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastlySID string) error {
+	if sc.fastlyKey == "" {
+		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
+	}
+
+	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), "")
+
+	return err
+}
+
+// DetachEdgeDeploymentService removes all backends from the Edge Deployment connected to the Fastly service
+// and detaches the Fastly Service from the Edge Deployment.
+func (sc *Client) DetachEdgeDeploymentService(corpName, siteName, fastlySID string) error {
+	if sc.fastlyKey == "" {
+		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
+	}
+
+	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), "")
+
+	return err
+}
+
+// UpdateEdgeDeploymentBackends checks if any changes were made to the Fastly service's backends
+// and updates the Edge Deployment if necessary.
+func (sc *Client) UpdateEdgeDeploymentBackends(corpName, siteName, fastlySID string) error {
+	if sc.fastlyKey == "" {
+		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
+	}
+
+	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s/backends", corpName, siteName, fastlySID), "")
+
+	return err
 }
