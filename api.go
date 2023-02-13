@@ -125,7 +125,9 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 			return body, errMsg(body)
 		}
 	case "DELETE":
-		if resp.StatusCode != http.StatusNoContent {
+		switch resp.StatusCode {
+		case http.StatusOK, http.StatusNoContent:
+		default:
 			return body, errMsg(body)
 		}
 	case "PUT":
