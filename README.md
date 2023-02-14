@@ -11,7 +11,7 @@ go get github.com/signalsciences/go-sigsci
 
 ## Usage
 
-```
+```go
 email := "[sigsci email]"
 password := "[sigsci password]"
 sc, err := sigsci.NewClient(email, password)
@@ -22,7 +22,7 @@ if err != nil {
 
 ## Full example
 
-```
+```go
 package main
 
 import (
