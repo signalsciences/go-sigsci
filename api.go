@@ -761,16 +761,16 @@ type Request struct {
 	Method            string       `json:"method"`
 	ServerName        string       `json:"serverName"`
 	Protocol          string       `json:"protocol"`
-	TLSProtocol			  string       `json:"tlsProtocol"`
-	TLSCipher				  string			 `json:"tlsCipher"`
-	Scheme					  string			 `json:"scheme"`
-	HeadersIn					[][]string   `json:"headersIn"`
+	TLSProtocol       string       `json:"tlsProtocol"`
+	TLSCipher         string       `json:"tlsCipher"`
+	Scheme            string       `json:"scheme"`
+	HeadersIn         [][]string   `json:"headersIn"`
 	Path              string       `json:"path"`
 	URI               string       `json:"uri"`
 	ResponseCode      int          `json:"responseCode"`
 	ResponseSize      int          `json:"responseSize"`
 	ResponseMillis    int          `json:"responseMillis"`
-	HeadersOut			  [][]string   `json:"headersOut"`
+	HeadersOut        [][]string   `json:"headersOut"`
 	AgentResponseCode int          `json:"agentResponseCode"`
 	Tags              []RequestTag `json:"tags"`
 }
