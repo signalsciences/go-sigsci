@@ -2807,7 +2807,7 @@ type SiteTemplateRuleBody struct {
 type Detection struct {
 	DetectionUpdateBody
 	Created   *time.Time `json:"created,omitempty"`
-	CreatedBy string     `json:"created_by,omitempty"`
+	CreatedBy string     `json:"createdBy,omitempty"`
 }
 
 // Alert basic struct for an Alert
