@@ -743,31 +743,36 @@ func (sc *Client) ExpireEvent(corpName, siteName, id string) (Event, error) {
 
 // RequestTag is a tag in a request
 type RequestTag struct {
-	Type     string
-	Location string
-	Value    string
-	Detector string
+	Type     string `json:"type"`
+	Location string `json:"location"`
+	Value    string `json:"value"`
+	Detector string `json:"detector"`
 }
 
 // Request contains the data for a request
 type Request struct {
-	ID                string
-	ServerHostname    string
-	RemoteIP          string
-	RemoteHostname    string
-	RemoteCountryCode string
-	UserAgent         string
-	Timestamp         time.Time
-	Method            string
-	ServerName        string
-	Protocol          string
-	Path              string
-	URI               string
-	ResponseCode      int
-	ResponseSize      int
-	ResponseMillis    int
-	AgentResponseCode int
-	Tags              []RequestTag
+	ID                string       `json:"id"`
+	ServerHostname    string       `json:"serverHostname"`
+	RemoteIP          string       `json:"remoteIP"`
+	RemoteHostname    string       `json:"remoteHostname"`
+	RemoteCountryCode string       `json:"remoteCountryCode"`
+	UserAgent         string       `json:"userAgent"`
+	Timestamp         time.Time    `json:"timestamp"`
+	Method            string       `json:"method"`
+	ServerName        string       `json:"serverName"`
+	Protocol          string       `json:"protocol"`
+	TLSProtocol       string       `json:"tlsProtocol"`
+	TLSCipher         string       `json:"tlsCipher"`
+	Scheme            string       `json:"scheme"`
+	HeadersIn         [][]string   `json:"headersIn"`
+	Path              string       `json:"path"`
+	URI               string       `json:"uri"`
+	ResponseCode      int          `json:"responseCode"`
+	ResponseSize      int          `json:"responseSize"`
+	ResponseMillis    int          `json:"responseMillis"`
+	HeadersOut        [][]string   `json:"headersOut"`
+	AgentResponseCode int          `json:"agentResponseCode"`
+	Tags              []RequestTag `json:"tags"`
 }
 
 // requestsResponse is the response for the search requests endpoint
