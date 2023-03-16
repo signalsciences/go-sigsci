@@ -455,6 +455,10 @@ func (sc *Client) ListCorpActivity(corpName string, limit, page int) ([]Activity
 	return ar.Data, nil
 }
 
+type ClientIPRules struct {
+	Header string `json:"header"`
+}
+
 // Site contains details for a site.
 type Site struct {
 	Name                 string
@@ -480,6 +484,7 @@ type Site struct {
 	TopAttacks           map[string]string
 	Members              map[string]string
 	AgentAnonMode        string
+	ClientIPRules        ClientIPRules
 }
 
 // sitesResponse is the response for list sites.
@@ -521,11 +526,12 @@ func (sc *Client) GetSite(corpName, siteName string) (Site, error) {
 
 // UpdateSiteBody is the body for the update site method.
 type UpdateSiteBody struct {
-	DisplayName          string `json:"displayName,omitempty"`
-	AgentLevel           string `json:"agentLevel,omitempty"`
-	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
-	BlockHTTPCode        int    `json:"blockHTTPCode,omitempty"`
-	AgentAnonMode        string `json:"agentAnonMode"`
+	DisplayName          string        `json:"displayName,omitempty"`
+	AgentLevel           string        `json:"agentLevel,omitempty"`
+	BlockDurationSeconds int           `json:"blockDurationSeconds,omitempty"`
+	BlockHTTPCode        int           `json:"blockHTTPCode,omitempty"`
+	AgentAnonMode        string        `json:"agentAnonMode"`
+	ClientIPRules        ClientIPRules `json:"clientIPRules"`
 }
 
 // UpdateSite updates a site by name.
@@ -2085,12 +2091,13 @@ func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]
 
 // CreateSiteBody is the structure required to create a Site.
 type CreateSiteBody struct {
-	Name                 string `json:"name,omitempty"`                 //Identifying name of the site
-	DisplayName          string `json:"displayName,omitempty"`          //Display name of the site
-	AgentLevel           string `json:"agentLevel,omitempty"`           //Agent action level - 'block', 'log' or 'off'
-	AgentAnonMode        string `json:"agentAnonMode"`                  //Agent IP anonimization mode - 'EU' or ''
-	BlockHTTPCode        int    `json:"blockHTTPCode,omitempty"`        //HTTP response code to send when when traffic is being blocked
-	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"` //Duration to block an IP in seconds
+	Name                 string        `json:"name,omitempty"`                 //Identifying name of the site
+	DisplayName          string        `json:"displayName,omitempty"`          //Display name of the site
+	AgentLevel           string        `json:"agentLevel,omitempty"`           //Agent action level - 'block', 'log' or 'off'
+	AgentAnonMode        string        `json:"agentAnonMode"`                  //Agent IP anonymization mode - 'EU' or ''
+	BlockHTTPCode        int           `json:"blockHTTPCode,omitempty"`        //HTTP response code to send when traffic is being blocked
+	BlockDurationSeconds int           `json:"blockDurationSeconds,omitempty"` //Duration to block an IP in seconds
+	ClientIPRules        ClientIPRules `json:"clientIPRules"`                  //The specified header to assign client IPs to requests.
 }
 
 // CreateSite Creates a site in a corp.

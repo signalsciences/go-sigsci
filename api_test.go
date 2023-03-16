@@ -90,6 +90,9 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		BlockHTTPCode:        406,   // TODO test non-default value once api supports it
 		BlockDurationSeconds: 86400, // TODO test non-default value once api supports it
 		AgentAnonMode:        "",
+		ClientIPRules: ClientIPRules{
+			"X-Forwarded-For",
+		},
 	}
 	siteresponse, err := sc.CreateSite(corp, siteBody)
 	if err != nil {
@@ -110,6 +113,9 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 	if siteresponse.AgentAnonMode != "" {
 		t.Errorf("AgentAnonMode got %s expected %s", siteresponse.AgentAnonMode, "")
 	}
+	if siteresponse.ClientIPRules.Header != "" {
+		t.Errorf("ClientIPRules got %s expected %s", siteresponse.ClientIPRules.Header, "")
+	}
 
 	updateSite, err := sc.UpdateSite(corp, siteBody.Name, UpdateSiteBody{
 		DisplayName:          "Test Site 2",
@@ -117,6 +123,9 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		BlockDurationSeconds: 86402,
 		BlockHTTPCode:        406, // TODO increment this value once api supports it
 		AgentAnonMode:        "EU",
+		ClientIPRules: ClientIPRules{
+			"Fastly-Client-IP",
+		},
 	})
 
 	if err != nil {
@@ -137,6 +146,9 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 	}
 	if updateSite.AgentAnonMode != "EU" {
 		t.Errorf("AgentAnonMode got %s expected %s", updateSite.AgentAnonMode, "EU")
+	}
+	if updateSite.ClientIPRules.Header != "Fastly-Client-IP" {
+		t.Errorf("ClientIPRules got %s expected %s", updateSite.ClientIPRules.Header, "EU")
 	}
 
 	err = sc.DeleteSite(corp, siteBody.Name)
