@@ -156,15 +156,15 @@ func errMsg(b []byte) error {
 
 // Corp contains details for a corp.
 type Corp struct {
-	Name                   string
-	DisplayName            string
-	SmallIconURI           string
-	Created                time.Time
-	SiteLimit              int
-	Sites                  map[string]string
-	AuthType               string
-	MFAEnforced            bool
-	SessionMaxAgeDashboard int
+	Name                   string            `json:"name"`
+	DisplayName            string            `json:"displayName"`
+	SmallIconURI           string            `json:"smallIconURI"`
+	Created                time.Time         `json:"created"`
+	SiteLimit              int               `json:"siteLimit"`
+	Sites                  map[string]string `json:"sites"`
+	AuthType               string            `json:"authType"`
+	MFAEnforced            bool              `json:"mfaEnforced"`
+	SessionMaxAgeDashboard int               `json:"sessionMaxAgeDashboard"`
 }
 
 // corpsResponse is the response for list corps
@@ -257,14 +257,14 @@ const (
 
 // CorpUser contains details for a corp user.
 type CorpUser struct {
-	Name        string
-	Email       string
-	Memberships map[string]string
-	Role        string
-	Status      string
-	MFAEnabled  bool
-	AuthStatus  string
-	Created     time.Time
+	Name        string            `json:"name"`
+	Email       string            `json:"email"`
+	Memberships map[string]string `json:"memberships"`
+	Role        string            `json:"role"`
+	Status      string            `json:"status"`
+	MFAEnabled  bool              `json:"mfaEnabled"`
+	AuthStatus  string            `json:"authStatus"`
+	Created     time.Time         `json:"created"`
 }
 
 // corpUsersResponse is the response for list corp users
@@ -372,29 +372,29 @@ func (sc *Client) InviteUser(corpName, email string, invite CorpUserInvite) (Cor
 }
 
 type topAttackType struct {
-	TagName    string
-	TagCount   int
-	TotalCount int
+	TagName    string `json:"tagName"`
+	TagCount   int    `json:"tagCount"`
+	TotalCount int    `json:"totalCount"`
 }
 
 type topAttackSource struct {
-	CountryCode  string
-	CountryName  string
-	RequestCount int
-	TotalCount   int
+	CountryCode  string `json:"countryCode"`
+	CountryName  string `json:"countryName"`
+	RequestCount int    `json:"requestCount"`
+	TotalCount   int    `json:"totalCount"`
 }
 
 // OverviewSite is a site in the overview report.
 type OverviewSite struct {
-	Name             string
-	DisplayName      string
-	TotalCount       int
-	BlockedCount     int
-	FlaggedCount     int
-	AttackCount      int
-	FlaggedIPCount   int
-	TopAttackTypes   []topAttackType
-	TopAttackSources []topAttackSource
+	Name             string            `json:"name"`
+	DisplayName      string            `json:"displayName"`
+	TotalCount       int               `json:"totalCount"`
+	BlockedCount     int               `json:"blockedCount"`
+	FlaggedCount     int               `json:"flaggedCount"`
+	AttackCount      int               `json:"attackCount"`
+	FlaggedIPCount   int               `json:"flaggedIPCount"`
+	TopAttackTypes   []topAttackType   `json:"topAttackTypes"`
+	TopAttackSources []topAttackSource `json:"topAttackSources"`
 }
 
 // overviewResponse contains the overview report data.
@@ -424,12 +424,12 @@ func (sc *Client) GetOverviewReport(corpName string, query url.Values) ([]Overvi
 
 // ActivityEvent contains the data for activity page responses.
 type ActivityEvent struct {
-	ID          string
-	EventType   string
-	MsgData     map[string]string
-	Message     string
-	Attachments []struct{}
-	Created     time.Time
+	ID          string            `json:"id"`
+	EventType   string            `json:"eventType"`
+	MsgData     map[string]string `json:"msgData"`
+	Message     string            `json:"message"`
+	Attachments []struct{}        `json:"attachments"`
+	Created     time.Time         `json:"created"`
 }
 
 // activityResponse is the response for the activity events endpoints.
@@ -457,29 +457,29 @@ func (sc *Client) ListCorpActivity(corpName string, limit, page int) ([]Activity
 
 // Site contains details for a site.
 type Site struct {
-	Name                 string
-	DisplayName          string
-	AgentLevel           string
-	BlockHTTPCode        int
-	BlockDurationSeconds int
-	Created              time.Time
-	Whitelist            map[string]string
-	Blacklist            map[string]string
-	Events               map[string]string
-	Requests             map[string]string
-	Redactions           map[string]string
-	SuspiciousIPs        map[string]string
-	Monitors             map[string]string
-	Pathwhitelist        map[string]string
-	Paramwhitelist       map[string]string
-	Integrations         map[string]string
-	HeaderLinks          map[string]string
-	Agents               map[string]string
-	Alerts               map[string]string
-	AnalyticsEvents      map[string]string
-	TopAttacks           map[string]string
-	Members              map[string]string
-	AgentAnonMode        string
+	Name                 string            `json:"name"`
+	DisplayName          string            `json:"displayName"`
+	AgentLevel           string            `json:"agentLevel"`
+	BlockHTTPCode        int               `json:"blockHTTPCode"`
+	BlockDurationSeconds int               `json:"blockDurationSeconds"`
+	Created              time.Time         `json:"created"`
+	Whitelist            map[string]string `json:"whitelist"`
+	Blacklist            map[string]string `json:"blacklist"`
+	Events               map[string]string `json:"events"`
+	Requests             map[string]string `json:"requests"`
+	Redactions           map[string]string `json:"redactions"`
+	SuspiciousIPs        map[string]string `json:"suspiciousIPs"`
+	Monitors             map[string]string `json:"monitors"`
+	Pathwhitelist        map[string]string `json:"pathwhitelist"`
+	Paramwhitelist       map[string]string `json:"paramwhitelist"`
+	Integrations         map[string]string `json:"integrations"`
+	HeaderLinks          map[string]string `json:"headerLinks"`
+	Agents               map[string]string `json:"agents"`
+	Alerts               map[string]string `json:"alerts"`
+	AnalyticsEvents      map[string]string `json:"analyticsEvents"`
+	TopAttacks           map[string]string `json:"topAttacks"`
+	Members              map[string]string `json:"members"`
+	AgentAnonMode        string            `json:"agentAnonMode"`
 }
 
 // sitesResponse is the response for list sites.
@@ -667,20 +667,20 @@ func (sc *Client) DeleteCustomAlert(corpName, siteName, id string) error {
 
 // Event is a request event.
 type Event struct {
-	ID                string
-	Timestamp         time.Time
-	Source            string
-	RemoteCountryCode string
-	RemoteHostname    string
-	UserAgents        []string
-	Action            string
-	Type              string
-	Reasons           map[string]int
-	RequestCount      int
-	TagCount          int
-	Window            int
-	Expires           time.Time
-	ExpiredBy         string
+	ID                string         `json:"id"`
+	Timestamp         time.Time      `json:"timestamp"`
+	Source            string         `json:"source"`
+	RemoteCountryCode string         `json:"remoteCountryCode"`
+	RemoteHostname    string         `json:"remoteHostname"`
+	UserAgents        []string       `json:"userAgents"`
+	Action            string         `json:"action"`
+	Type              string         `json:"type"`
+	Reasons           map[string]int `json:"reasons"`
+	RequestCount      int            `json:"requestCount"`
+	TagCount          int            `json:"tagCount"`
+	Window            int            `json:"window"`
+	Expires           time.Time      `json:"expires"`
+	ExpiredBy         string         `json:"expiredBy"`
 }
 
 type eventsResponse struct {
@@ -846,12 +846,12 @@ func (sc *Client) GetRequestFeed(corpName, siteName string, query url.Values) (n
 
 // ListIP is a whitelisted or blacklisted IP address.
 type ListIP struct {
-	ID        string
-	Source    string
-	Expires   time.Time `json:"omitempty"`
-	Note      string
-	CreatedBy string
-	Created   time.Time
+	ID        string    `json:"id"`
+	Source    string    `json:"source"`
+	Expires   time.Time `json:"expires,omitempty"`
+	Note      string    `json:"note"`
+	CreatedBy string    `json:"createdBy"`
+	Created   time.Time `json:"created"`
 }
 
 // whitelistResponse is the response for the whitelist endpoint.
@@ -980,11 +980,11 @@ func (sc *Client) DeleteBlacklistIP(corpName, siteName, id string) error {
 
 // Redaction contains the data for a privacy redaction
 type Redaction struct {
-	ID            string
-	Field         string
-	RedactionType int
-	CreatedBy     string
-	Created       time.Time
+	ID            string    `json:"id"`
+	Field         string    `json:"field"`
+	RedactionType int       `json:"redactionType"`
+	CreatedBy     string    `json:"createdBy"`
+	Created       time.Time `json:"created"`
 }
 
 // redactionsResponse is the response for the list redactions endpoint
@@ -1088,15 +1088,15 @@ func (sc *Client) DeleteRedaction(corpName, siteName, id string) error {
 
 // Integration contains the data for an integration
 type Integration struct {
-	ID        string
-	Name      string
-	Type      string
-	URL       string
-	Events    []string
-	Active    bool
-	Note      string
-	CreatedBy string
-	Created   time.Time
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Type      string    `json:"type"`
+	URL       string    `json:"url"`
+	Events    []string  `json:"events"`
+	Active    bool      `json:"active"`
+	Note      string    `json:"note"`
+	CreatedBy string    `json:"createdBy"`
+	Created   time.Time `json:"created"`
 }
 
 // integrationsResponse is the response for the list integrations endpoint
@@ -1384,17 +1384,17 @@ type CloudWAFCertificateBase struct {
 
 type CloudWAFCertificate struct {
 	CloudWAFCertificateBase
-	ID                      string
-	CommonName              string
-	SubjectAlternativeNames []string
-	Domains                 []string
-	Fingerprint             string
-	ExpiresAt               string
-	Status                  string
-	CreatedBy               string
-	Created                 string
-	UpdatedBy               string
-	UpdatedAt               string
+	ID                      string   `json:"id"`
+	CommonName              string   `json:"commonName"`
+	SubjectAlternativeNames []string `json:"subjectAlternativeNames"`
+	Domains                 []string `json:"domains"`
+	Fingerprint             string   `json:"fingerprint"`
+	ExpiresAt               string   `json:"expiresAt"`
+	Status                  string   `json:"status"`
+	CreatedBy               string   `json:"createdBy"`
+	Created                 string   `json:"created"`
+	UpdatedBy               string   `json:"updatedBy"`
+	UpdatedAt               string   `json:"updatedAt"`
 }
 
 type UploadCloudWAFCertificateBody struct {
@@ -1481,12 +1481,12 @@ func (sc *Client) DeleteCloudWAFCertificate(corpName, id string) error {
 
 // Param is a whitelisted parameter.
 type Param struct {
-	ID        string
-	Name      string
-	Type      string
-	Note      string
-	CreatedBy string
-	Created   time.Time
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Type      string    `json:"type"`
+	Note      string    `json:"note"`
+	CreatedBy string    `json:"createdBy"`
+	Created   time.Time `json:"created"`
 }
 
 // paramsResponse is the response for the whitelisted params endpoint.
@@ -1512,11 +1512,11 @@ func (sc *Client) ListParams(corpName, siteName string) ([]Param, error) {
 
 // Path is a whitelisted path.
 type Path struct {
-	ID        string
-	Path      string
-	Note      string
-	CreatedBy string
-	Created   time.Time
+	ID        string    `json:"id"`
+	Path      string    `json:"path"`
+	Note      string    `json:"note"`
+	CreatedBy string    `json:"createdBy"`
+	Created   time.Time `json:"created"`
 }
 
 // pathsResponse is the response for the whitelisted paths endpoint.
@@ -1558,13 +1558,13 @@ func (sc *Client) ListSiteActivity(corpName, siteName string, limit, page int) (
 
 // HeaderLink contains the data for a response or request header link
 type HeaderLink struct {
-	ID        string
-	Type      string
-	Name      string
-	LinkName  string
-	Link      string
-	CreatedBy string
-	Created   time.Time
+	ID        string    `json:"id"`
+	Type      string    `json:"type"`
+	Name      string    `json:"name"`
+	LinkName  string    `json:"linkName"`
+	Link      string    `json:"link"`
+	CreatedBy string    `json:"createdBy"`
+	Created   time.Time `json:"created"`
 }
 
 // headerLinksResponse is the response for the list header links endpoint
@@ -1642,9 +1642,9 @@ func (sc *Client) DeleteHeaderLink(corpName, siteName, id string) error {
 
 // SiteMemberUser is the embedded user object in the site members response.
 type SiteMemberUser struct {
-	Name   string
-	Email  string
-	Status string
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Status string `json:"status"`
 }
 
 // SiteMember contains the data for a site member
@@ -1773,11 +1773,11 @@ func (sc *Client) InviteSiteMember(corpName, siteName, email string, body SiteMe
 
 // SiteMonitor is a monitor URL for a site.
 type SiteMonitor struct {
-	ID        string
-	URL       string
-	Share     bool
-	CreatedBy string
-	Created   time.Time
+	ID        string    `json:"id"`
+	URL       string    `json:"url"`
+	Share     bool      `json:"share"`
+	CreatedBy string    `json:"createdBy"`
+	Created   time.Time `json:"created"`
 }
 
 // SiteMonitorResp is the response from GET site monitor
@@ -1985,14 +1985,14 @@ func (sc *Client) GetAgentLogs(corpName, siteName, agentName string) ([]AgentLog
 
 // SuspiciousIP is a suspicious IP.
 type SuspiciousIP struct {
-	Source            string
-	Percent           int
+	Source            string    `json:"source"`
+	Percent           int       `json:"percent"`
 	RemoteCountryCode string    `json:"remoteCountryCode"`
 	RemoteHostname    string    `json:"remoteHostname"`
 	TagName           string    `json:"tagName"`
 	ShortName         string    `json:"shortName"`
-	IntervalStart     time.Time `json:"interval_start"`
-	Timestamp         time.Time
+	IntervalStart     time.Time `json:"intervalStart"`
+	Timestamp         time.Time `json:"timestamp"`
 }
 
 // suspiciousIPSResponse is the response for the suspicious IPs endpoint.
@@ -2018,9 +2018,9 @@ func (sc *Client) ListSuspiciousIPs(corpName, siteName string) ([]SuspiciousIP, 
 
 // TopAttack is a top attack.
 type TopAttack struct {
-	Value string
-	Label string
-	Count int
+	Value string `json:"value"`
+	Label string `json:"label"`
+	Count int    `json:"count"`
 }
 
 // topAttacksResponse is the response for the top attacks endpoint.
@@ -2050,13 +2050,13 @@ func (sc *Client) ListTopAttacks(corpName, siteName string, query url.Values) ([
 
 // Timeseries contains timeseries request info.
 type Timeseries struct {
-	Type         string
-	From         int
-	Until        int
-	Inc          int
-	Data         []int
-	SummaryCount int
-	TotalPoints  int
+	Type         string `json:"type"`
+	From         int    `json:"from"`
+	Until        int    `json:"until"`
+	Inc          int    `json:"inc"`
+	Data         []int  `json:"data"`
+	SummaryCount int    `json:"summaryCount"`
+	TotalPoints  int    `json:"totalPoints"`
 }
 
 type timeseriesResponse struct {
@@ -2807,7 +2807,7 @@ type SiteTemplateRuleBody struct {
 type Detection struct {
 	DetectionUpdateBody
 	Created   *time.Time `json:"created,omitempty"`
-	CreatedBy string     `json:"created_by,omitempty"`
+	CreatedBy string     `json:"createdBy,omitempty"`
 }
 
 // Alert basic struct for an Alert
@@ -2815,10 +2815,10 @@ type Alert struct {
 	AlertUpdateBody
 	ID        string     `json:"id,omitempty"`
 	Type      string     `json:"type,omitempty"`
-	TagName   string     `json:"tag_name,omitempty"`
-	FieldName string     `json:"field_name,omitempty"`
+	TagName   string     `json:"tagName,omitempty"`
+	FieldName string     `json:"fieldName,omitempty"`
 	Created   *time.Time `json:"created,omitempty"`
-	CreatedBy string     `json:"created_by,omitempty"`
+	CreatedBy string     `json:"createdBy,omitempty"`
 }
 
 // SiteTemplate basic struct for a site template
@@ -2861,9 +2861,9 @@ func (sc *Client) GetSiteTemplateRuleByID(corpName, siteName, id string) (SiteTe
 
 // PrimaryAgentKey contains the secret and access keys used by the agents
 type PrimaryAgentKey struct {
-	Name      string
-	AccessKey string
-	SecretKey string
+	Name      string `json:"name"`
+	AccessKey string `json:"accessKey"`
+	SecretKey string `json:"secretKey"`
 }
 
 // GetSitePrimaryAgentKey retrieve the primary agent keys
