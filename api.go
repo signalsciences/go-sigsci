@@ -455,7 +455,7 @@ func (sc *Client) ListCorpActivity(corpName string, limit, page int) ([]Activity
 	return ar.Data, nil
 }
 
-type ClientIPRules struct {
+type ClientIPRules []struct {
 	Header string `json:"header"`
 }
 
@@ -2103,6 +2103,7 @@ type CreateSiteBody struct {
 // CreateSite Creates a site in a corp.
 func (sc *Client) CreateSite(corpName string, body CreateSiteBody) (Site, error) {
 	b, err := json.Marshal(body)
+	fmt.Println(string(b))
 	if err != nil {
 		return Site{}, err
 	}
