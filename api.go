@@ -2103,7 +2103,6 @@ type CreateSiteBody struct {
 // CreateSite Creates a site in a corp.
 func (sc *Client) CreateSite(corpName string, body CreateSiteBody) (Site, error) {
 	b, err := json.Marshal(body)
-	fmt.Println(string(b))
 	if err != nil {
 		return Site{}, err
 	}

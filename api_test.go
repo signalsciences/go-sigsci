@@ -94,7 +94,6 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 			{"X-Forwarded-For"},
 		},
 	}
-	fmt.Println(siteBody)
 	siteresponse, err := sc.CreateSite(corp, siteBody)
 	if err != nil {
 		t.Fatal(err)
