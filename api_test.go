@@ -1864,3 +1864,19 @@ func TestCRUDSiteRequestRule(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestErrMsg(t *testing.T) {
+	cases := []struct {
+		in   []byte
+		want string
+	}{
+		{[]byte(`{"message": "an error message"}`), "an error message"},
+		{[]byte(`{"detail": "an error message"}`), `{"detail": "an error message"}`},
+	}
+
+	for _, tt := range cases {
+		if err := errMsg(tt.in); err.Error() != tt.want {
+			t.Errorf("got error message = %q, want %q", err.Error(), tt.want)
+		}
+	}
+}
