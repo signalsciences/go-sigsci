@@ -151,6 +151,12 @@ func errMsg(b []byte) error {
 		return err
 	}
 
+	// if error response does not contain "message" field,
+	// return the full error JSON
+	if errResp.Message == "" {
+		return errors.New(string(b))
+	}
+
 	return errors.New(errResp.Message)
 }
 
