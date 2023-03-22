@@ -2909,13 +2909,13 @@ type CreateOrUpdateEdgeDeploymentServiceBody struct {
 // CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
 // Edge Deployment and pre-configures the Fastly service with an edge dictionary and custom VCL.
 func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastlySID string, body CreateOrUpdateEdgeDeploymentServiceBody) error {
+	if sc.fastlyKey == "" {
+		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
+	}
+
 	b, err := json.Marshal(body)
 	if err != nil {
 		return err
-	}
-
-	if sc.fastlyKey == "" {
-		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
 	}
 
 	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
