@@ -1,5 +1,5 @@
 lint:
 	go vet
-	test -z $(gofmt -s -l .)
+	./scripts/gofmt.sh
 test:
 	go test -v
