@@ -466,6 +466,7 @@ type Site struct {
 	AgentLevel           string
 	BlockHTTPCode        int
 	BlockDurationSeconds int
+	BlockRedirectURL     string
 	Created              time.Time
 	Whitelist            map[string]string
 	Blacklist            map[string]string
@@ -530,6 +531,7 @@ type UpdateSiteBody struct {
 	AgentLevel           string        `json:"agentLevel,omitempty"`
 	BlockDurationSeconds int           `json:"blockDurationSeconds,omitempty"`
 	BlockHTTPCode        int           `json:"blockHTTPCode,omitempty"`
+	BlockRedirectURL     string        `json:"blockRedirectURL,omitempty"`
 	AgentAnonMode        string        `json:"agentAnonMode"`
 	ClientIPRules        ClientIPRules `json:"clientIPRules"`
 }
@@ -2096,6 +2098,7 @@ type CreateSiteBody struct {
 	AgentLevel           string        `json:"agentLevel,omitempty"`           //Agent action level - 'block', 'log' or 'off'
 	AgentAnonMode        string        `json:"agentAnonMode"`                  //Agent IP anonymization mode - 'EU' or ''
 	BlockHTTPCode        int           `json:"blockHTTPCode,omitempty"`        //HTTP response code to send when traffic is being blocked
+	BlockRedirectURL     string        `json:"blockRedirectURL,omitempty"`     //URL to redirect to when BlockHTTPCode is 301 or 302
 	BlockDurationSeconds int           `json:"blockDurationSeconds,omitempty"` //Duration to block an IP in seconds
 	ClientIPRules        ClientIPRules `json:"clientIPRules"`                  //The specified header to assign client IPs to requests.
 }
@@ -2145,6 +2148,7 @@ type Action struct {
 	Type         string `json:"type,omitempty"` //(block, allow, exclude)
 	Signal       string `json:"signal,omitempty"`
 	ResponseCode int    `json:"responseCode,omitempty"` //(400-499)
+	RedirectURL  string `json:"redirectURL,omitempty"`  //requires ResponseCode 301 or 302
 }
 
 // ClientIdentifier contains the client identifier fields for site rules of type rate_limit
