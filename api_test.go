@@ -87,7 +87,7 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		Name:                 "test-site",
 		DisplayName:          "Test Site",
 		AgentLevel:           "block",
-		BlockHTTPCode:        406,   // TODO test non-default value once api supports it
+		BlockHTTPCode:        403,
 		BlockDurationSeconds: 86400, // TODO test non-default value once api supports it
 		AgentAnonMode:        "",
 		ClientIPRules: ClientIPRules{
@@ -104,8 +104,8 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 	if siteresponse.AgentLevel != "block" {
 		t.Errorf("AgentLevel got %s expected %s", siteresponse.AgentLevel, "block")
 	}
-	if siteresponse.BlockHTTPCode != 406 {
-		t.Errorf("BlockHTTPCode got %d expected %d", siteresponse.BlockHTTPCode, 406)
+	if siteresponse.BlockHTTPCode != 403 {
+		t.Errorf("BlockHTTPCode got %d expected %d", siteresponse.BlockHTTPCode, 403)
 	}
 	if siteresponse.BlockDurationSeconds != 86400 {
 		t.Errorf("BlockDurationSeconds got %d expected %d", siteresponse.BlockDurationSeconds, 86400)
@@ -123,7 +123,8 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		DisplayName:          "Test Site 2",
 		AgentLevel:           "off",
 		BlockDurationSeconds: 86402,
-		BlockHTTPCode:        406, // TODO increment this value once api supports it
+		BlockHTTPCode:        302,
+		BlockRedirectURL:     "/blocked",
 		AgentAnonMode:        "EU",
 		ClientIPRules: ClientIPRules{
 			{"Fastly-Client-IP"},
@@ -140,8 +141,11 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 	if updateSite.AgentLevel != "off" {
 		t.Errorf("AgentLevel got %s expected %s", updateSite.AgentLevel, "off")
 	}
-	if updateSite.BlockHTTPCode != 406 {
-		t.Errorf("BlockHTTPCode got %d expected %d", updateSite.BlockHTTPCode, 406)
+	if updateSite.BlockHTTPCode != 302 {
+		t.Errorf("BlockHTTPCode got %d expected %d", updateSite.BlockHTTPCode, 302)
+	}
+	if updateSite.BlockRedirectURL != "/blocked" {
+		t.Errorf("BlockRedirectURL got %s expected %s", updateSite.BlockRedirectURL, "/blocked")
 	}
 	if updateSite.BlockDurationSeconds != 86402 {
 		t.Errorf("BlockDurationSeconds got %d expected %d", updateSite.BlockDurationSeconds, 86402)
