@@ -2474,16 +2474,17 @@ func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteR
 
 // CreateCorpRuleBody contains the rule of a Corp
 type CreateCorpRuleBody struct {
-	SiteNames     []string    `json:"siteNames,omitempty"` //Sites with the rule available. Rules with a global corpScope will return '[]'.
-	Type          string      `json:"type,omitempty"`      //(request, signal)
-	CorpScope     string      `json:"corpScope,omitempty"` //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
-	Enabled       bool        `json:"enabled,omitempty"`
-	GroupOperator string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Signal        string      `json:"signal,omitempty"`        //The signal id of the signal being excluded
-	Reason        string      `json:"reason,omitempty"`        //Description of the rule
-	Expiration    string      `json:"expiration,omitempty"`    //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
-	Conditions    []Condition `json:"conditions,omitempty"`
-	Actions       []Action    `json:"actions,omitempty"`
+	SiteNames      []string    `json:"siteNames,omitempty"` //Sites with the rule available. Rules with a global corpScope will return '[]'.
+	Type           string      `json:"type,omitempty"`      //(request, signal)
+	CorpScope      string      `json:"corpScope,omitempty"` //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
+	Enabled        bool        `json:"enabled,omitempty"`
+	GroupOperator  string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
+	Signal         string      `json:"signal,omitempty"`        //The signal id of the signal being excluded
+	Reason         string      `json:"reason,omitempty"`        //Description of the rule
+	Expiration     string      `json:"expiration,omitempty"`    //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
+	Conditions     []Condition `json:"conditions,omitempty"`
+	Actions        []Action    `json:"actions,omitempty"`
+	RequestLogging string      `json:"requestlogging,omitempty"`
 }
 
 // ResponseCorpRuleBody contains the response from creating the rule
