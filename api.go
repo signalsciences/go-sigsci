@@ -2897,6 +2897,22 @@ func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgen
 func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
 	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
 
+	// Only run more retries if there was an error
+	if err != nil {
+		var sleep_time = 4 * time.Second
+		for i := 0; i < 5; i++ {
+			if err != nil {
+				sleep_time *= 2
+				log.Println("Sleeping for ", sleep_time)
+				time.Sleep(sleep_time)
+				_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
+			}
+			if err == nil {
+				break
+			}
+		}
+	}
+
 	return err
 }
 
@@ -2927,37 +2943,21 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 
 	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
 
-	// Starting at 4 is an arbitrary decision
-	var sleep_time = 4 * time.Second
+	// Only run retries if there was an error
 	if err != nil {
-		sleep_time *= 2
-		log.Println("Sleeping for ", sleep_time)
-		time.Sleep(sleep_time)
-		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
-	}
-	if err != nil {
-		sleep_time *= 2
-		log.Println("Sleeping for ", sleep_time)
-		time.Sleep(sleep_time)
-		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
-	}
-	if err != nil {
-		sleep_time *= 2
-		log.Println("Sleeping for ", sleep_time)
-		time.Sleep(sleep_time)
-		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
-	}
-	if err != nil {
-		sleep_time *= 2
-		log.Println("Sleeping for ", sleep_time)
-		time.Sleep(sleep_time)
-		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
-	}
-	if err != nil {
-		sleep_time *= 2
-		log.Println("Sleeping for ", sleep_time)
-		time.Sleep(sleep_time)
-		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+		// Starting at 4 is an arbitrary decision
+		var sleep_time = 4 * time.Second
+		for i := 0; i < 5; i++ {
+			if err != nil {
+				sleep_time *= 2
+				log.Println("Sleeping for ", sleep_time)
+				time.Sleep(sleep_time)
+				_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+			}
+			if err == nil {
+				break
+			}
+		}
 	}
 
 	return err
