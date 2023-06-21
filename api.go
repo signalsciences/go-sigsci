@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -2914,6 +2915,7 @@ type CreateOrUpdateEdgeDeploymentServiceBody struct {
 // CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
 // Edge Deployment and pre-configures the Fastly service with an edge dictionary and custom VCL.
 func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastlySID string, body CreateOrUpdateEdgeDeploymentServiceBody) error {
+	log.Println("No sleep yet")
 	if sc.fastlyKey == "" {
 		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
 	}
@@ -2924,6 +2926,39 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 	}
 
 	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+
+	// Starting at 4 is an arbitrary decision
+	var sleep_time = 4 * time.Second
+	if err != nil {
+		sleep_time *= 2
+		log.Println("Sleeping for ", sleep_time)
+		time.Sleep(sleep_time)
+		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	}
+	if err != nil {
+		sleep_time *= 2
+		log.Println("Sleeping for ", sleep_time)
+		time.Sleep(sleep_time)
+		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	}
+	if err != nil {
+		sleep_time *= 2
+		log.Println("Sleeping for ", sleep_time)
+		time.Sleep(sleep_time)
+		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	}
+	if err != nil {
+		sleep_time *= 2
+		log.Println("Sleeping for ", sleep_time)
+		time.Sleep(sleep_time)
+		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	}
+	if err != nil {
+		sleep_time *= 2
+		log.Println("Sleeping for ", sleep_time)
+		time.Sleep(sleep_time)
+		_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	}
 
 	return err
 }
