@@ -2893,25 +2893,40 @@ func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgen
 	return primaryKey, nil
 }
 
+func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response, error) {
+	client := &http.Client{}
+
+	var b io.Reader
+	if reqBody != "" {
+		b = strings.NewReader(reqBody)
+	}
+
+	req, err := http.NewRequest(method, apiURL+url, b)
+
+	if sc.email != "" {
+		// token auth
+		req.Header.Set("X-API-User", sc.email)
+		req.Header.Set("X-API-Token", sc.token)
+	} else {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
+	}
+
+	if sc.fastlyKey != "" {
+		req.Header.Set("Fastly-Key", sc.fastlyKey)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "go-sigsci")
+
+	resp, err := client.Do(req)
+
+	return resp, err
+
+}
+
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
 func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
-	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
-
-	// Only run more retries if there was an error
-	if err != nil {
-		var sleep_time = 4 * time.Second
-		for i := 0; i < 5; i++ {
-			if err != nil {
-				sleep_time *= 2
-				log.Println("Sleeping for ", sleep_time)
-				time.Sleep(sleep_time)
-				_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
-			}
-			if err == nil {
-				break
-			}
-		}
-	}
+	_, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
 
 	return err
 }
@@ -2931,7 +2946,7 @@ type CreateOrUpdateEdgeDeploymentServiceBody struct {
 // CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
 // Edge Deployment and pre-configures the Fastly service with an edge dictionary and custom VCL.
 func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastlySID string, body CreateOrUpdateEdgeDeploymentServiceBody) error {
-	log.Println("No sleep yet")
+	log.Println("Doing CreateOrUpdateEdgeDeploymentService")
 	if sc.fastlyKey == "" {
 		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
 	}
@@ -2941,22 +2956,36 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		return err
 	}
 
-	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	var sleep_time = 4 * time.Second
+	for i := 0; i < 6; i++ {
+		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+		// println("response", resp)
+		// println("response body", resp.Body)
+		println("response status", resp.StatusCode)
+		// println("response err", err)
 
-	// Only run retries if there was an error
-	if err != nil {
-		// Starting at 4 is an arbitrary decision
-		var sleep_time = 4 * time.Second
-		for i := 0; i < 5; i++ {
+		// Add case statements for the following
+		// 400 means that there is some sort of incorrect user input. Need to output the body of the response as the error
+		// 404 needs to retry because the NGWAF edge service is not ready yet.
+		switch resp.StatusCode {
+		case http.StatusOK: // 200
+			return err
+		case http.StatusBadRequest: // 400
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				sleep_time *= 2
-				log.Println("Sleeping for ", sleep_time)
-				time.Sleep(sleep_time)
-				_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+				return err
 			}
-			if err == nil {
-				break
-			}
+			return errMsg(body) // Typically incorrect user info
+		case http.StatusNotFound: // 404
+			// Wait and send another request
+			sleep_time *= 2
+			log.Println("Sleeping for ", sleep_time)
+			time.Sleep(sleep_time)
+		default: // Something else
+			// Wait and send another request
+			sleep_time *= 2
+			log.Println("Sleeping for ", sleep_time)
+			time.Sleep(sleep_time)
 		}
 	}
 
