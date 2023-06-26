@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -2946,7 +2945,6 @@ type CreateOrUpdateEdgeDeploymentServiceBody struct {
 // CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
 // Edge Deployment and pre-configures the Fastly service with an edge dictionary and custom VCL.
 func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastlySID string, body CreateOrUpdateEdgeDeploymentServiceBody) error {
-	log.Println("Doing CreateOrUpdateEdgeDeploymentService")
 	if sc.fastlyKey == "" {
 		return errors.New("please set Fastly-Key with the client.SetFastlyKey method")
 	}
@@ -2959,10 +2957,6 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 	var sleep_time = 4 * time.Second
 	for i := 0; i < 6; i++ {
 		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
-		// println("response", resp)
-		// println("response body", resp.Body)
-		println("response status", resp.StatusCode)
-		// println("response err", err)
 
 		// Add case statements for the following
 		// 400 means that there is some sort of incorrect user input. Need to output the body of the response as the error
@@ -2976,15 +2970,19 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 				return err
 			}
 			return errMsg(body) // Typically incorrect user info
+		case http.StatusUnauthorized: // 401
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			return errMsg(body) // Typically incorrect user info
 		case http.StatusNotFound: // 404
 			// Wait and send another request
 			sleep_time *= 2
-			log.Println("Sleeping for ", sleep_time)
 			time.Sleep(sleep_time)
 		default: // Something else
 			// Wait and send another request
 			sleep_time *= 2
-			log.Println("Sleeping for ", sleep_time)
 			time.Sleep(sleep_time)
 		}
 	}
