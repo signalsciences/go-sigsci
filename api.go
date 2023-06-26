@@ -2900,7 +2900,7 @@ func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response
 		b = strings.NewReader(reqBody)
 	}
 
-	req, err := http.NewRequest(method, apiURL+url, b)
+	req, _ := http.NewRequest(method, apiURL+url, b)
 
 	if sc.email != "" {
 		// token auth
