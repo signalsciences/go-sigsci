@@ -2954,7 +2954,7 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		return err
 	}
 
-	var sleep_time = 4 * time.Second
+	var sleepTime = 4 * time.Second
 	for i := 0; i < 6; i++ {
 		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
 
