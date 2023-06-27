@@ -2978,12 +2978,12 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 			return errMsg(body) // Typically incorrect user info
 		case http.StatusNotFound: // 404
 			// Wait and send another request
-			sleep_time *= 2
-			time.Sleep(sleep_time)
+			sleepTime *= 2
+			time.Sleep(sleepTime)
 		default: // Something else
 			// Wait and send another request
-			sleep_time *= 2
-			time.Sleep(sleep_time)
+			sleepTime *= 2
+			time.Sleep(sleepTime)
 		}
 	}
 
