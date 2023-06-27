@@ -75,34 +75,7 @@ func (sc *Client) authenticate(email, password string) error {
 }
 
 func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
-	client := &http.Client{}
-
-	var b io.Reader
-	if reqBody != "" {
-		b = strings.NewReader(reqBody)
-	}
-
-	req, err := http.NewRequest(method, apiURL+url, b)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	if sc.email != "" {
-		// token auth
-		req.Header.Set("X-API-User", sc.email)
-		req.Header.Set("X-API-Token", sc.token)
-	} else {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
-	}
-
-	if sc.fastlyKey != "" {
-		req.Header.Set("Fastly-Key", sc.fastlyKey)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "go-sigsci")
-
-	resp, err := client.Do(req)
+	resp, err := sc.doRequestDetailed(method, url, reqBody)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2920,7 +2893,6 @@ func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response
 	resp, err := client.Do(req)
 
 	return resp, err
-
 }
 
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
