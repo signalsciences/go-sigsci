@@ -2967,7 +2967,7 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 	}
 
 	// If we got here linking of Fastly Service with Inspection Service has timed out
-	return errors.New("timed out associating fastly service with inspection service. retry later.")
+	return errors.New("timed out associating fastly service with inspection service retry later")
 }
 
 // DetachEdgeDeploymentService removes all backends from the Edge Deployment connected to the Fastly service
