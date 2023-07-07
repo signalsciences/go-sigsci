@@ -2897,7 +2897,7 @@ func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response
 
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
 func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
-	_, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
+	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
 
 	return err
 }
