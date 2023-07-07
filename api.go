@@ -75,34 +75,7 @@ func (sc *Client) authenticate(email, password string) error {
 }
 
 func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
-	client := &http.Client{}
-
-	var b io.Reader
-	if reqBody != "" {
-		b = strings.NewReader(reqBody)
-	}
-
-	req, err := http.NewRequest(method, apiURL+url, b)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	if sc.email != "" {
-		// token auth
-		req.Header.Set("X-API-User", sc.email)
-		req.Header.Set("X-API-Token", sc.token)
-	} else {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
-	}
-
-	if sc.fastlyKey != "" {
-		req.Header.Set("Fastly-Key", sc.fastlyKey)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "go-sigsci")
-
-	resp, err := client.Do(req)
+	resp, err := sc.doRequestDetailed(method, url, reqBody)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2892,6 +2865,36 @@ func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgen
 	return primaryKey, nil
 }
 
+func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response, error) {
+	client := &http.Client{}
+
+	var b io.Reader
+	if reqBody != "" {
+		b = strings.NewReader(reqBody)
+	}
+
+	req, _ := http.NewRequest(method, apiURL+url, b)
+
+	if sc.email != "" {
+		// token auth
+		req.Header.Set("X-API-User", sc.email)
+		req.Header.Set("X-API-Token", sc.token)
+	} else {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", sc.token))
+	}
+
+	if sc.fastlyKey != "" {
+		req.Header.Set("Fastly-Key", sc.fastlyKey)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "go-sigsci")
+
+	resp, err := client.Do(req)
+
+	return resp, err
+}
+
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
 func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
 	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
@@ -2923,7 +2926,40 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		return err
 	}
 
-	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+	var sleepTime = 15 * time.Second
+	for i := 0; i < 6; i++ {
+		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
+
+		// Add case statements for the following
+		// 400 means that there is some sort of incorrect user input. Need to output the body of the response as the error
+		// 404 needs to retry because the NGWAF edge service is not ready yet.
+		switch resp.StatusCode {
+		case http.StatusOK: // 200
+			return err
+		case http.StatusBadRequest: // 400
+			fallthrough
+		case http.StatusUnauthorized: // 401
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			return errMsg(body) // Typically incorrect user info
+		case http.StatusNotFound: // 404
+			// Only sleep if Retry-After response header is available
+			if resp.Header.Get("Retry-After") != "" {
+				time.Sleep(sleepTime)
+			} else {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
+				return errMsg(body) // 404 happened for some other reason
+			}
+		default: // Something else
+			// Wait and send another request
+			time.Sleep(sleepTime)
+		}
+	}
 
 	return err
 }
