@@ -2926,7 +2926,10 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		return err
 	}
 
-	var sleepTime = 15 * time.Second
+	// Call to link inspection service with the Fastly service will fail if inspection service is not available. Set sleeptime to
+	// 20 seconds for the first sleep before retrying the first time
+	var sleepTime = 20 * time.Second
+
 	for i := 0; i < 6; i++ {
 		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
 
@@ -2948,6 +2951,8 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 			// Only sleep if Retry-After response header is available
 			if resp.Header.Get("Retry-After") != "" {
 				time.Sleep(sleepTime)
+				// Add 5 seconds to sleeptime for every consecutive retry e.g. wait 20, 25, 30, 35, 40, 45 seconds
+				sleepTime += 5 * time.Second
 			} else {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
@@ -2961,7 +2966,8 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		}
 	}
 
-	return err
+	// If we got here linking of Fastly Service with Inspection Service has timed out
+	return errors.New("timed out associating fastly service with inspection service retry later")
 }
 
 // DetachEdgeDeploymentService removes all backends from the Edge Deployment connected to the Fastly service
