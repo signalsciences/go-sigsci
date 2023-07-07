@@ -2926,7 +2926,7 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		return err
 	}
 
-	var sleepTime = 4 * time.Second
+	var sleepTime = 15 * time.Second
 	for i := 0; i < 6; i++ {
 		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
 
@@ -2937,11 +2937,7 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 		case http.StatusOK: // 200
 			return err
 		case http.StatusBadRequest: // 400
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-			return errMsg(body) // Typically incorrect user info
+			fallthrough
 		case http.StatusUnauthorized: // 401
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
@@ -2949,12 +2945,18 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 			}
 			return errMsg(body) // Typically incorrect user info
 		case http.StatusNotFound: // 404
-			// Wait and send another request
-			sleepTime *= 2
-			time.Sleep(sleepTime)
+			// Only sleep if Retry-After response header is available
+			if resp.Header.Get("Retry-After") != "" {
+				time.Sleep(sleepTime)
+			} else {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
+				return errMsg(body) // 404 happened for some other reason
+			}
 		default: // Something else
 			// Wait and send another request
-			sleepTime *= 2
 			time.Sleep(sleepTime)
 		}
 	}
