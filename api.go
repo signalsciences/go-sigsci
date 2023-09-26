@@ -2110,8 +2110,8 @@ func (sc *Client) DeleteSite(corpName, siteName string) error {
 type Condition struct {
 	Type          string      `json:"type,omitempty"`          //(group, single)
 	GroupOperator string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Field         string      `json:"field,omitempty"`         //type: single - (scheme, method, path, useragent, domain, ip, responseCode, agentname, paramname, paramvalue, country, name, valueString, valueIp, signalType)
-	Operator      string      `json:"operator,omitempty"`      //type: single - (equals, doesNotEqual, contains, doesNotContain, like, notLike, exists, doesNotExist, inList, notInList)
+	Field         string      `json:"field,omitempty"`         //type: single - (scheme, method, path, useragent, domain, ip, responseCode, agentname, paramname, paramvalue, country, name, valueString, valueInt, valueIp, signalType)
+	Operator      string      `json:"operator,omitempty"`      //type: single - (equals, doesNotEqual, contains, doesNotContain, greaterEqual, lesserEqual, like, notLike, exists, doesNotExist, inList, notInList)
 	Value         string      `json:"value,omitempty"`         //type: single - See request fields (https://docs.signalsciences.net/using-signal-sciences/features/rules/#request-fields)
 	Conditions    []Condition `json:"conditions,omitempty"`
 }
