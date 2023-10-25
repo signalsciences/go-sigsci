@@ -2224,6 +2224,8 @@ func getResponseSiteRuleBody(response []byte) (ResponseSiteRuleBody, error) {
 // GetAllSiteRules Lists the Site Rules
 func (sc *Client) GetAllSiteRules(corpName, siteName string) (ResponseSiteRuleBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), "")
+func (sc *Client) GetAllSiteRules(corpName, siteName string, limit, page int) (ResponseSiteRuleBodyList, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules?limit=%d&page=%d", corpName, siteName, limit, page), "")
 
 	if err != nil {
 		return ResponseSiteRuleBodyList{}, err
