@@ -129,15 +129,23 @@ func errMsg(b []byte) error {
 
 // Corp contains details for a corp.
 type Corp struct {
-	Name                   string
-	DisplayName            string
-	SmallIconURI           string
-	Created                time.Time
-	SiteLimit              int
-	Sites                  map[string]string
-	AuthType               string
-	MFAEnforced            bool
-	SessionMaxAgeDashboard int
+	Name                        string
+	DisplayName                 string
+	SmallIconURI                string
+	Created                     time.Time
+	SiteLimit                   int
+	Sites                       map[string]string
+	AuthType                    string
+	LogoutURI                   string
+	SamlCert                    string
+	SamlEndpoint                string
+	SignRequestsUsingStoredCert bool
+	SamlRequestCert             string
+	SessionMaxAgeDashboard      int
+	ApiAllowedIPs               []string
+	ApiTokenMaxAge              int
+	RestrictedAccessTokens      bool
+	SsoProvisioningConfigured   bool
 }
 
 // corpsResponse is the response for list corps
