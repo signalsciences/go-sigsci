@@ -459,6 +459,8 @@ type Site struct {
 	Members              map[string]string
 	AgentAnonMode        string
 	ClientIPRules        ClientIPRules
+	AttackThresholds     []AttackThreshold
+	ImmediateBlock       bool
 }
 
 // sitesResponse is the response for list sites.
@@ -500,13 +502,15 @@ func (sc *Client) GetSite(corpName, siteName string) (Site, error) {
 
 // UpdateSiteBody is the body for the update site method.
 type UpdateSiteBody struct {
-	DisplayName          string        `json:"displayName,omitempty"`
-	AgentLevel           string        `json:"agentLevel,omitempty"`
-	BlockDurationSeconds int           `json:"blockDurationSeconds,omitempty"`
-	BlockHTTPCode        int           `json:"blockHTTPCode,omitempty"`
-	BlockRedirectURL     string        `json:"blockRedirectURL,omitempty"`
-	AgentAnonMode        string        `json:"agentAnonMode"`
-	ClientIPRules        ClientIPRules `json:"clientIPRules"`
+	AgentLevel           string            `json:"agentLevel,omitempty"`
+	AgentAnonMode        string            `json:"agentAnonMode"`
+	AttackThresholds     []AttackThreshold `json:"attackThresholds,omitempty"` // Slice of AttackThreshold
+	BlockDurationSeconds int               `json:"blockDurationSeconds,omitempty"`
+	BlockHTTPCode        int               `json:"blockHTTPCode,omitempty"`
+	BlockRedirectURL     string            `json:"blockRedirectURL,omitempty"`
+	ClientIPRules        ClientIPRules     `json:"clientIPRules"`
+	DisplayName          string            `json:"displayName,omitempty"`
+	ImmediateBlock       bool              `json:"immediateBlock"` // Enable immediate blocking
 }
 
 // UpdateSite updates a site by name.
@@ -532,20 +536,20 @@ func (sc *Client) UpdateSite(corpName, siteName string, body UpdateSiteBody) (Si
 
 // CustomAlert is the body for creating a custom alert.
 type CustomAlert struct {
-	ID                   string    `json:"id,omitempty"` //Site-specific unique ID of the alert
+	ID                   string    `json:"id,omitempty"` // Site-specific unique ID of the alert
 	SiteID               string    `json:"siteID,omitempty"`
-	TagName              string    `json:"tagName,omitempty"`              //The name of the tag whose occurrences the alert is watching. Must match an existing tag
-	LongName             string    `json:"longName,omitempty"`             //A human readable description of the alert. Must be between 3 and 25 characters.
-	Interval             int       `json:"interval"`                       //The number of minutes of past traffic to examine. Must be 1, 10 or 60.
-	Threshold            int       `json:"threshold"`                      //The number of occurrences of the tag in the interval needed to trigger the alert.
-	BlockDurationSeconds int       `json:"blockDurationSeconds,omitempty"` //The number of seconds this alert is active. empty means default value
-	Enabled              bool      `json:"enabled"`                        //A flag to toggle this alert.
-	Action               string    `json:"action,omitempty"`               //A flag that describes what happens when the alert is triggered. 'info' creates an incident in the dashboard. 'flagged' creates an incident and blocks traffic for 24 hours.
-	Type                 string    `json:"type,omitempty"`                 //Type of alert (siteAlert, template, rateLimit, siteMetric)
-	SkipNotifications    bool      `json:"skipNotifications"`              //A flag to disable external notifications - slack, webhooks, emails, etc.
+	TagName              string    `json:"tagName,omitempty"`              // The name of the tag whose occurrences the alert is watching. Must match an existing tag
+	LongName             string    `json:"longName,omitempty"`             // A human readable description of the alert. Must be between 3 and 25 characters.
+	Interval             int       `json:"interval"`                       // The number of minutes of past traffic to examine. Must be 1, 10 or 60.
+	Threshold            int       `json:"threshold"`                      // The number of occurrences of the tag in the interval needed to trigger the alert.
+	BlockDurationSeconds int       `json:"blockDurationSeconds,omitempty"` // The number of seconds this alert is active. empty means default value
+	Enabled              bool      `json:"enabled"`                        // A flag to toggle this alert.
+	Action               string    `json:"action,omitempty"`               // A flag that describes what happens when the alert is triggered. 'info' creates an incident in the dashboard. 'flagged' creates an incident and blocks traffic for 24 hours.
+	Type                 string    `json:"type,omitempty"`                 // Type of alert (siteAlert, template, rateLimit, siteMetric)
+	SkipNotifications    bool      `json:"skipNotifications"`              // A flag to disable external notifications - slack, webhooks, emails, etc.
 	FieldName            string    `json:"fieldName,omitempty"`
-	CreatedBy            string    `json:"createdBy,omitempty"` //The email of the user that created the alert
-	Created              time.Time `json:"created,omitempty"`   //RFC3339 date time
+	CreatedBy            string    `json:"createdBy,omitempty"` // The email of the user that created the alert
+	Created              time.Time `json:"created,omitempty"`   // RFC3339 date time
 	Operator             string    `json:"operator,omitempty"`
 }
 
@@ -2064,16 +2068,24 @@ func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]
 	return t.Data, nil
 }
 
+// AttackThreshold
+type AttackThreshold struct {
+	Interval  int `json:"interval,omitempty"` // Interval in minutes of threshold. Valid options 1, 10, 60
+	Threshold int `json:threshold,omitempty"` // Threshold from 1 - 10000
+}
+
 // CreateSiteBody is the structure required to create a Site.
 type CreateSiteBody struct {
-	Name                 string        `json:"name,omitempty"`                 //Identifying name of the site
-	DisplayName          string        `json:"displayName,omitempty"`          //Display name of the site
-	AgentLevel           string        `json:"agentLevel,omitempty"`           //Agent action level - 'block', 'log' or 'off'
-	AgentAnonMode        string        `json:"agentAnonMode"`                  //Agent IP anonymization mode - 'EU' or ''
-	BlockHTTPCode        int           `json:"blockHTTPCode,omitempty"`        //HTTP response code to send when traffic is being blocked
-	BlockRedirectURL     string        `json:"blockRedirectURL,omitempty"`     //URL to redirect to when BlockHTTPCode is 301 or 302
-	BlockDurationSeconds int           `json:"blockDurationSeconds,omitempty"` //Duration to block an IP in seconds
-	ClientIPRules        ClientIPRules `json:"clientIPRules"`                  //The specified header to assign client IPs to requests.
+	Name                 string            `json:"name,omitempty"`                 // Identifying name of the site
+	DisplayName          string            `json:"displayName,omitempty"`          // Display name of the site
+	AgentLevel           string            `json:"agentLevel,omitempty"`           // Agent action level - 'block', 'log' or 'off'
+	AgentAnonMode        string            `json:"agentAnonMode"`                  // Agent IP anonymization mode - 'EU' or ''
+	BlockHTTPCode        int               `json:"blockHTTPCode,omitempty"`        // HTTP response code to send when traffic is being blocked
+	BlockRedirectURL     string            `json:"blockRedirectURL,omitempty"`     // URL to redirect to when BlockHTTPCode is 301 or 302
+	BlockDurationSeconds int               `json:"blockDurationSeconds,omitempty"` // Duration to block an IP in seconds
+	ClientIPRules        ClientIPRules     `json:"clientIPRules"`                  // The specified header to assign client IPs to requests.
+	AttackThresholds     []AttackThreshold `json:"attackThresholds,omitempty"`     // Slice of AttackThreshold
+	ImmediateBlock       bool              `json:"immediateBlock"`                 // Enable immediate blocking
 }
 
 // CreateSite Creates a site in a corp.
@@ -2099,7 +2111,6 @@ func (sc *Client) CreateSite(corpName string, body CreateSiteBody) (Site, error)
 // DeleteSite deletes the site
 func (sc *Client) DeleteSite(corpName, siteName string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s", corpName, siteName), "")
-
 	if err != nil {
 		return err
 	}
@@ -2109,10 +2120,10 @@ func (sc *Client) DeleteSite(corpName, siteName string) error {
 // Condition contains rule condition
 type Condition struct {
 	Type          string      `json:"type,omitempty"`          //(group, single)
-	GroupOperator string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Field         string      `json:"field,omitempty"`         //type: single - (scheme, method, path, useragent, domain, ip, responseCode, agentname, paramname, paramvalue, country, name, valueString, valueInt, valueIp, signalType)
-	Operator      string      `json:"operator,omitempty"`      //type: single - (equals, doesNotEqual, contains, doesNotContain, greaterEqual, lesserEqual, like, notLike, exists, doesNotExist, inList, notInList)
-	Value         string      `json:"value,omitempty"`         //type: single - See request fields (https://docs.signalsciences.net/using-signal-sciences/features/rules/#request-fields)
+	GroupOperator string      `json:"groupOperator,omitempty"` // type: group - Conditions that must be matched when evaluating the request (all, any)
+	Field         string      `json:"field,omitempty"`         // type: single - (scheme, method, path, useragent, domain, ip, responseCode, agentname, paramname, paramvalue, country, name, valueString, valueInt, valueIp, signalType)
+	Operator      string      `json:"operator,omitempty"`      // type: single - (equals, doesNotEqual, contains, doesNotContain, greaterEqual, lesserEqual, like, notLike, exists, doesNotExist, inList, notInList)
+	Value         string      `json:"value,omitempty"`         // type: single - See request fields (https://docs.signalsciences.net/using-signal-sciences/features/rules/#request-fields)
 	Conditions    []Condition `json:"conditions,omitempty"`
 }
 
@@ -2121,7 +2132,7 @@ type Action struct {
 	Type         string `json:"type,omitempty"` //(block, allow, exclude)
 	Signal       string `json:"signal,omitempty"`
 	ResponseCode int    `json:"responseCode,omitempty"` //(400-499)
-	RedirectURL  string `json:"redirectURL,omitempty"`  //requires ResponseCode 301 or 302
+	RedirectURL  string `json:"redirectURL,omitempty"`  // requires ResponseCode 301 or 302
 }
 
 // ClientIdentifier contains the client identifier fields for site rules of type rate_limit
@@ -2142,24 +2153,24 @@ type RateLimit struct {
 // CreateSiteRuleBody contains the rule for the site
 type CreateSiteRuleBody struct {
 	Type           string      `json:"type,omitempty"`          //(signal, request, rateLimit)
-	GroupOperator  string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
+	GroupOperator  string      `json:"groupOperator,omitempty"` // type: group - Conditions that must be matched when evaluating the request (all, any)
 	Enabled        bool        `json:"enabled,omitempty"`
-	Reason         string      `json:"reason,omitempty"`     //Description of the rule
-	Signal         string      `json:"signal,omitempty"`     //The signal id of the signal being excluded. Null unless type==request
-	Expiration     string      `json:"expiration,omitempty"` //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
+	Reason         string      `json:"reason,omitempty"`     // Description of the rule
+	Signal         string      `json:"signal,omitempty"`     // The signal id of the signal being excluded. Null unless type==request
+	Expiration     string      `json:"expiration,omitempty"` // Date the rule will automatically be disabled. If rule is always enabled, will return empty string
 	Conditions     []Condition `json:"conditions,omitempty"`
 	Actions        []Action    `json:"actions,omitempty"`
-	RateLimit      *RateLimit  `json:"rateLimit,omitempty"` //Null unless type==rateLimit
+	RateLimit      *RateLimit  `json:"rateLimit,omitempty"` // Null unless type==rateLimit
 	RequestLogging string      `json:"requestlogging,omitempty"`
 }
 
 // ResponseSiteRuleBody contains the response from creating the rule
 type ResponseSiteRuleBody struct {
 	CreateSiteRuleBody
-	ID        string    `json:"id"`        //internal ID
-	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
-	Created   time.Time `json:"created"`   //Created RFC3339 date time
-	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
+	ID        string    `json:"id"`        // internal ID
+	CreatedBy string    `json:"createdby"` // Email address of the user that created the item
+	Created   time.Time `json:"created"`   // Created RFC3339 date time
+	Updated   time.Time `json:"updated"`   // Last updated RFC3339 date time
 }
 
 // ResponseSiteRuleBodyList contains the returned rules
@@ -2224,7 +2235,6 @@ func getResponseSiteRuleBody(response []byte) (ResponseSiteRuleBody, error) {
 // GetAllSiteRules Lists the Site Rules
 func (sc *Client) GetAllSiteRules(corpName, siteName string) (ResponseSiteRuleBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/rules", corpName, siteName), "")
-
 	if err != nil {
 		return ResponseSiteRuleBodyList{}, err
 	}
@@ -2240,37 +2250,37 @@ func (sc *Client) GetAllSiteRules(corpName, siteName string) (ResponseSiteRuleBo
 
 // CreateListBody Create List Request
 type CreateListBody struct {
-	Name        string   `json:"name,omitempty"`        //Descriptive list name
-	Type        string   `json:"type,omitempty"`        //List types (string, ip, country, wildcard, signal)
-	Description string   `json:"description,omitempty"` //Optional list description
-	Entries     []string `json:"entries,omitempty"`     //List entries
+	Name        string   `json:"name,omitempty"`        // Descriptive list name
+	Type        string   `json:"type,omitempty"`        // List types (string, ip, country, wildcard, signal)
+	Description string   `json:"description,omitempty"` // Optional list description
+	Entries     []string `json:"entries,omitempty"`     // List entries
 }
 
 // UpdateListBody update list
 type UpdateListBody struct {
-	Description string  `json:"description,omitempty"` //Optional list description
-	Entries     Entries `json:"entries,omitempty"`     //List entries
+	Description string  `json:"description,omitempty"` // Optional list description
+	Entries     Entries `json:"entries,omitempty"`     // List entries
 }
 
 // Entries List entries
 type Entries struct {
-	Additions []string `json:"additions,omitempty"` //List additions
+	Additions []string `json:"additions,omitempty"` // List additions
 	Deletions []string `json:"deletions,omitempty"` // List deletions
 }
 
 // ResponseListBody contains the response from creating the list
 type ResponseListBody struct {
 	CreateListBody
-	ID        string    `json:"id"`        //internal ID
-	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
-	Created   time.Time `json:"created"`   //Created RFC3339 date time
-	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
+	ID        string    `json:"id"`        // internal ID
+	CreatedBy string    `json:"createdby"` // Email address of the user that created the item
+	Created   time.Time `json:"created"`   // Created RFC3339 date time
+	Updated   time.Time `json:"updated"`   // Last updated RFC3339 date time
 }
 
 // ResponseListBodyList contains the returned list
 type ResponseListBodyList struct {
 	// TotalCount int                `json:"totalCount"`
-	Data []ResponseListBody `json:"data"` //Site List data
+	Data []ResponseListBody `json:"data"` // Site List data
 }
 
 // CreateSiteList Create a site list
@@ -2342,26 +2352,26 @@ func (sc *Client) GetAllSiteLists(corpName, siteName string) (ResponseListBodyLi
 
 // CreateSiteRedactionBody Create redaction Request
 type CreateSiteRedactionBody struct {
-	Field         string `json:"field,omitempty"` //Field name
-	RedactionType int    `json:"redactionType"`   //Type of redaction (0: Request Parameter, 1: Request Header, 2: Response Header)
+	Field         string `json:"field,omitempty"` // Field name
+	RedactionType int    `json:"redactionType"`   // Type of redaction (0: Request Parameter, 1: Request Header, 2: Response Header)
 }
 
-//UpdateSiteRedactionBody update site redaction
+// UpdateSiteRedactionBody update site redaction
 // type UpdateSiteRedactionBody CreateSiteRedactionBody
 
 // ResponseSiteRedactionBody redaction response
 type ResponseSiteRedactionBody struct {
 	CreateSiteRedactionBody
-	ID        string    `json:"id"`        //internal ID
-	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
-	Created   time.Time `json:"created"`   //Created RFC3339 date time
-	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
+	ID        string    `json:"id"`        // internal ID
+	CreatedBy string    `json:"createdby"` // Email address of the user that created the item
+	Created   time.Time `json:"created"`   // Created RFC3339 date time
+	Updated   time.Time `json:"updated"`   // Last updated RFC3339 date time
 }
 
 // ResponseSiteRedactionBodyList redaction response list
 type ResponseSiteRedactionBodyList struct {
 	// TotalCount int                    `json:"totalCount"`
-	Data []ResponseSiteRedactionBody `json:"data"` //Site Redaction data
+	Data []ResponseSiteRedactionBody `json:"data"` // Site Redaction data
 }
 
 // CreateSiteRedaction Create a site list
@@ -2431,7 +2441,6 @@ func (sc *Client) DeleteSiteRedactionByID(corpName, siteName string, id string) 
 // GetAllSiteRedactions Lists the Sites Redactions
 func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteRedactionBodyList, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/redactions", corpName, siteName), "")
-
 	if err != nil {
 		return ResponseSiteRedactionBodyList{}, err
 	}
@@ -2447,14 +2456,14 @@ func (sc *Client) GetAllSiteRedactions(corpName, siteName string) (ResponseSiteR
 
 // CreateCorpRuleBody contains the rule of a Corp
 type CreateCorpRuleBody struct {
-	SiteNames      []string    `json:"siteNames,omitempty"` //Sites with the rule available. Rules with a global corpScope will return '[]'.
+	SiteNames      []string    `json:"siteNames,omitempty"` // Sites with the rule available. Rules with a global corpScope will return '[]'.
 	Type           string      `json:"type,omitempty"`      //(request, signal)
-	CorpScope      string      `json:"corpScope,omitempty"` //Whether the rule is applied to all sites or to specific sites. (global, specificSites)
+	CorpScope      string      `json:"corpScope,omitempty"` // Whether the rule is applied to all sites or to specific sites. (global, specificSites)
 	Enabled        bool        `json:"enabled,omitempty"`
-	GroupOperator  string      `json:"groupOperator,omitempty"` //type: group - Conditions that must be matched when evaluating the request (all, any)
-	Signal         string      `json:"signal,omitempty"`        //The signal id of the signal being excluded
-	Reason         string      `json:"reason,omitempty"`        //Description of the rule
-	Expiration     string      `json:"expiration,omitempty"`    //Date the rule will automatically be disabled. If rule is always enabled, will return empty string
+	GroupOperator  string      `json:"groupOperator,omitempty"` // type: group - Conditions that must be matched when evaluating the request (all, any)
+	Signal         string      `json:"signal,omitempty"`        // The signal id of the signal being excluded
+	Reason         string      `json:"reason,omitempty"`        // Description of the rule
+	Expiration     string      `json:"expiration,omitempty"`    // Date the rule will automatically be disabled. If rule is always enabled, will return empty string
 	Conditions     []Condition `json:"conditions,omitempty"`
 	Actions        []Action    `json:"actions,omitempty"`
 	RequestLogging string      `json:"requestlogging,omitempty"`
@@ -2464,15 +2473,15 @@ type CreateCorpRuleBody struct {
 type ResponseCorpRuleBody struct {
 	CreateCorpRuleBody
 	ID        string    `json:"id"`
-	CreatedBy string    `json:"createdby"` //Email address of the user that created the item
-	Created   time.Time `json:"created"`   //Created RFC3339 date time
-	Updated   time.Time `json:"updated"`   //Last updated RFC3339 date time
+	CreatedBy string    `json:"createdby"` // Email address of the user that created the item
+	Created   time.Time `json:"created"`   // Created RFC3339 date time
+	Updated   time.Time `json:"updated"`   // Last updated RFC3339 date time
 }
 
 // ResponseCorpRuleBodyList list
 type ResponseCorpRuleBodyList struct {
 	TotalCount int                    `json:"totalCount"`
-	Data       []ResponseCorpRuleBody `json:"data"` //ResponseCorpRuleBody
+	Data       []ResponseCorpRuleBody `json:"data"` // ResponseCorpRuleBody
 }
 
 // CreateCorpRule creates a rule and returns the response
@@ -2602,30 +2611,30 @@ func (sc *Client) DeleteCorpListByID(corpName string, id string) error {
 
 // CreateSignalTagBody create a signal tag
 type CreateSignalTagBody struct {
-	ShortName   string `json:"shortName,omitempty"`   //The display name of the signal tag
-	Description string `json:"description,omitempty"` //Optional signal tag description
+	ShortName   string `json:"shortName,omitempty"`   // The display name of the signal tag
+	Description string `json:"description,omitempty"` // Optional signal tag description
 }
 
 // UpdateSignalTagBody update a signal tag
 type UpdateSignalTagBody struct {
-	Description string `json:"description,omitempty"` //Optional signal tag description
+	Description string `json:"description,omitempty"` // Optional signal tag description
 }
 
 // ResponseSignalTagBody response singnal tag
 type ResponseSignalTagBody struct {
 	CreateSignalTagBody
-	TagName       string    `json:"tagName,omitempty"`  //The identifier for the signal tag
-	LongName      string    `json:"longName,omitempty"` //The display name of the signal tag - deprecated
+	TagName       string    `json:"tagName,omitempty"`  // The identifier for the signal tag
+	LongName      string    `json:"longName,omitempty"` // The display name of the signal tag - deprecated
 	Configurable  bool      `json:"configurable,omitempty"`
 	Informational bool      `json:"informational,omitempty"`
 	NeedsResponse bool      `json:"needsResponse,omitempty"`
-	CreatedBy     string    `json:"createdBy,omitempty"` //Email address of the user that created the resource
-	Created       time.Time `json:"created,omitempty"`   //Created RFC3339 date time
+	CreatedBy     string    `json:"createdBy,omitempty"` // Email address of the user that created the resource
+	Created       time.Time `json:"created,omitempty"`   // Created RFC3339 date time
 }
 
 // ResponseSignalTagBodyList response list
 type ResponseSignalTagBodyList struct {
-	Data []ResponseSignalTagBody `json:"data"` //ResponseSignalTagBody
+	Data []ResponseSignalTagBody `json:"data"` // ResponseSignalTagBody
 }
 
 // CreateCorpSignalTag create signal tag
@@ -2685,6 +2694,7 @@ func (sc *Client) DeleteCorpSignalTagByID(corpName string, id string) error {
 	}
 	return nil
 }
+
 func getResponseSignalTagBody(response []byte) (ResponseSignalTagBody, error) {
 	var responseBody ResponseSignalTagBody
 	err := json.Unmarshal(response, &responseBody)
@@ -2910,8 +2920,8 @@ func (sc *Client) DeleteEdgeDeployment(corpName, siteName string) error {
 }
 
 type CreateOrUpdateEdgeDeploymentServiceBody struct {
-	ActivateVersion *bool `json:"activateVersion,omitempty"` //Activate Fastly VCL service after clone
-	PercentEnabled  int   `json:"percentEnabled,omitempty"`  //Percentage of traffic to send to NGWAF@Edge
+	ActivateVersion *bool `json:"activateVersion,omitempty"` // Activate Fastly VCL service after clone
+	PercentEnabled  int   `json:"percentEnabled,omitempty"`  // Percentage of traffic to send to NGWAF@Edge
 }
 
 // CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
@@ -2928,7 +2938,7 @@ func (sc *Client) CreateOrUpdateEdgeDeploymentService(corpName, siteName, fastly
 
 	// Call to link inspection service with the Fastly service will fail if inspection service is not available. Set sleeptime to
 	// 20 seconds for the first sleep before retrying the first time
-	var sleepTime = 20 * time.Second
+	sleepTime := 20 * time.Second
 
 	for i := 0; i < 6; i++ {
 		resp, err := sc.doRequestDetailed("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment/%s", corpName, siteName, fastlySID), string(b))
