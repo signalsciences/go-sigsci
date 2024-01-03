@@ -2070,7 +2070,7 @@ func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]
 
 // AttackThreshold
 type AttackThreshold struct {
-	Interval  int `json:"interval,omitempty"` // Interval in minutes of threshold. Valid options 1, 10, 60
+	Interval  int `json:"interval,omitempty"`  // Interval in minutes of threshold. Valid options 1, 10, 60
 	Threshold int `json:"threshold,omitempty"` // Threshold from 1 - 10000
 }
 
