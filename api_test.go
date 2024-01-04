@@ -79,6 +79,7 @@ func TestGoUserTokenClient(t *testing.T) {
 		})
 	}
 }
+
 func TestCreateUpdateDeleteSite(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp
@@ -93,6 +94,10 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 		ClientIPRules: ClientIPRules{
 			{"X-Forwarded-For"},
 		},
+		AttackThresholds: []AttackThreshold{
+			{Interval: 10, Threshold: 50},
+		},
+		ImmediateBlock: true,
 	}
 	siteresponse, err := sc.CreateSite(corp, siteBody)
 	if err != nil {
@@ -113,6 +118,20 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 	if siteresponse.AgentAnonMode != "" {
 		t.Errorf("AgentAnonMode got %s expected %s", siteresponse.AgentAnonMode, "")
 	}
+	if siteresponse.AttackThresholds != nil {
+		for _, value := range siteresponse.AttackThresholds {
+			switch value.Interval {
+			case 10:
+				if value.Threshold != 50 {
+					t.Errorf("AttackThresholds got %d expected %d for 10 minute interval", value.Threshold, 50)
+				}
+			}
+		}
+	}
+	if siteresponse.ImmediateBlock != true {
+		t.Errorf("ImmediateBlock got %t expected %t", siteresponse.ImmediateBlock, true)
+	}
+
 	for _, h := range siteresponse.ClientIPRules {
 		if h.Header != "X-Forwarded-For" {
 			t.Errorf("ClientIPRules got %s expected %s", h.Header, "X-Forwarded-For")
@@ -130,7 +149,6 @@ func TestCreateUpdateDeleteSite(t *testing.T) {
 			{"Fastly-Client-IP"},
 		},
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,6 +520,7 @@ func TestCreateMultipleRedactions(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
 func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp
@@ -512,7 +531,6 @@ func TestCreateListUpdateDeleteRedaction(t *testing.T) {
 		RedactionType: 2,
 	}
 	createresp, err := sc.CreateSiteRedaction(corp, site, createSiteRedactionBody)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,7 +652,6 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 		BlockDurationSeconds: 3600,
 	}
 	updateResp, err := sc.UpdateCustomAlert(corp, site, readresp.ID, updateCustomAlert)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -695,8 +712,8 @@ func TestSiteCreateReadUpdateDeleteAlerts(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 
+func TestCreateReadUpdateDeleteCorpRule(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp
 	// Get initial counts
@@ -1100,7 +1117,8 @@ func TestCreateReadUpdateDeleteSiteTemplate(t *testing.T) {
 					Enabled:              true,
 					Action:               "info",
 					BlockDurationSeconds: 99677,
-				}},
+				},
+			},
 		},
 		AlertUpdates: []Alert{},
 		AlertDeletes: []Alert{},
