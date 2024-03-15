@@ -2129,10 +2129,11 @@ type Condition struct {
 
 // Action contains the rule action
 type Action struct {
-	Type         string `json:"type,omitempty"` //(block, allow, exclude)
-	Signal       string `json:"signal,omitempty"`
-	ResponseCode int    `json:"responseCode,omitempty"` //(400-499)
-	RedirectURL  string `json:"redirectURL,omitempty"`  // requires ResponseCode 301 or 302
+	Type             string `json:"type,omitempty"` //(block, allow, exclude, browserChallenge)
+	Signal           string `json:"signal,omitempty"`
+	ResponseCode     int    `json:"responseCode,omitempty"`     //(400-499)
+	RedirectURL      string `json:"redirectURL,omitempty"`      // requires ResponseCode 301 or 302
+	AllowInteractive bool   `json:"allowInteractive,omitempty"` // used with browserChallenge
 }
 
 // ClientIdentifier contains the client identifier fields for site rules of type rate_limit
