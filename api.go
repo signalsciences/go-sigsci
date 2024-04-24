@@ -2906,6 +2906,36 @@ func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response
 	return resp, err
 }
 
+// FastlyService contains details about a Fastly Service mapped a site.
+type FastlyService struct {
+	ID        string    `json:"id"`
+	AccountID string    `json:"accountID"`
+	Created   time.Time `json:"created"`
+	CreatedBy string    `json:"createdBy"`
+}
+
+// EdgeDeployment contains details about an Edge Deployment
+type EdgeDeployment struct {
+	AgentHostName    string          `json:"AgentHostName"`
+	ServicesAttached []FastlyService `json:"ServicesAttached"`
+}
+
+// ConfirmEdgeDeployment retrieves currently deployed EdgeWafs and Fastly Services mapped to a site..
+func (sc *Client) ConfirmEdgeDeployment(corpName, siteName string) (EdgeDeployment, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
+	if err != nil {
+		return EdgeDeployment{}, err
+	}
+
+	var edgeDeployment EdgeDeployment
+	err = json.Unmarshal(resp, &edgeDeployment)
+	if err != nil {
+		return EdgeDeployment{}, err
+	}
+
+	return edgeDeployment, nil
+}
+
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
 func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
 	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
