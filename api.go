@@ -2920,8 +2920,8 @@ type EdgeDeployment struct {
 	ServicesAttached []FastlyService `json:"ServicesAttached"`
 }
 
-// ConfirmEdgeDeployment retrieves currently deployed EdgeWafs and Fastly Services mapped to a site..
-func (sc *Client) ConfirmEdgeDeployment(corpName, siteName string) (EdgeDeployment, error) {
+// GetEdgeDeployment retrieves currently deployed EdgeWafs and Fastly Services mapped to a site..
+func (sc *Client) GetEdgeDeployment(corpName, siteName string) (EdgeDeployment, error) {
 	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
 	if err != nil {
 		return EdgeDeployment{}, err
