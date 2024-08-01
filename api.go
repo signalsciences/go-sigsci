@@ -584,6 +584,8 @@ type CustomAlertBody struct {
 	Action               string `json:"action"`
 	SkipNotifications    bool   `json:"skipNotifications"`
 	BlockDurationSeconds int    `json:"blockDurationSeconds,omitempty"`
+	Operator             string `json:"operator,omitempty"`
+	FieldName            string `json:"fieldName,omitempty"`
 }
 
 // CreateCustomAlert creates a custom alert.
