@@ -2955,6 +2955,7 @@ func (sc *Client) DeleteEdgeDeployment(corpName, siteName string) error {
 type CreateOrUpdateEdgeDeploymentServiceBody struct {
 	ActivateVersion *bool `json:"activateVersion,omitempty"` // Activate Fastly VCL service after clone
 	PercentEnabled  int   `json:"percentEnabled,omitempty"`  // Percentage of traffic to send to NGWAF@Edge
+	CustomClientIP  *bool `json:"customClientIP,omitempty"`  // enable to prevent Fastly-Client-IP from being overwritten by the NGWAF@Edge
 }
 
 // CreateOrUpdateEdgeDeploymentService copies the backends from the Fastly service to the
