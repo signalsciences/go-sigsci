@@ -1109,9 +1109,10 @@ func (sc *Client) ListIntegrations(corpName, siteName string) ([]Integration, er
 
 // IntegrationBody is the body for adding an integration.
 type IntegrationBody struct {
-	URL    string   `json:"url"`
-	Type   string   `json:"type"`
-	Events []string `json:"events"`
+	URL    string            `json:"url"`
+	Type   string            `json:"type"`
+	Events []string          `json:"events"`
+	Fields map[string]string `json:"fields,omitempty"`
 }
 
 // AddIntegration adds an integration.
@@ -1153,8 +1154,9 @@ func (sc *Client) GetIntegration(corpName, siteName, id string) (Integration, er
 
 // UpdateIntegrationBody is the body for updating an integration.
 type UpdateIntegrationBody struct {
-	URL    string   `json:"url,omitempty"`
-	Events []string `json:"events,omitempty"`
+	URL    string            `json:"url,omitempty"`
+	Events []string          `json:"events,omitempty"`
+	Fields map[string]string `json:"fields,omitempty"`
 }
 
 // UpdateIntegration updates an integration by id.
