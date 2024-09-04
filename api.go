@@ -1857,7 +1857,7 @@ type Agent struct {
 	AgentDecisionTime95th       float64   `json:"agent.decision_time_95th"`
 	AgentDecisionTime99th       float64   `json:"agent.decision_time_99th"`
 	AgentEnabled                bool      `json:"agent.enabled"`
-	AgentLastRuleUpdate         nullTime  `json:"agent.last_rule_update"`
+	AgentLastRuleUpdate         emptyTime `json:"agent.last_rule_update"`
 	AgentLastSeen               time.Time `json:"agent.last_seen"`
 	AgentLatencyTime50th        float64   `json:"agent.latency_time_50th"`
 	AgentLatencyTime95th        float64   `json:"agent.latency_time_95th"`
@@ -1900,14 +1900,14 @@ type Agent struct {
 	RuntimeNumGoroutines        int       `json:"num_goroutines"`
 }
 
-// customTime wraps time.Time and handles empty string values during unmarshaling.
-type nullTime struct {
+// emptyTime wraps time.Time and handles empty string values during unmarshaling.
+type emptyTime struct {
 	time.Time
 }
 
-// UnmarshalJSON implements custom unmarshaling for nullTime.
+// UnmarshalJSON implements custom unmarshaling for emptyTime.
 // Handles cases where the value is either a valid time string or an empty string.
-func (ct *nullTime) UnmarshalJSON(data []byte) error {
+func (ct *emptyTime) UnmarshalJSON(data []byte) error {
 	// Unmarshaling as a string
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
@@ -1916,7 +1916,7 @@ func (ct *nullTime) UnmarshalJSON(data []byte) error {
 
 	// If empty, leave the time as a zero value.
 	if str == "" {
-		*ct = nullTime{time.Time{}}
+		*ct = emptyTime{time.Time{}}
 		return nil
 	}
 
@@ -1926,7 +1926,7 @@ func (ct *nullTime) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*ct = nullTime{parsedTime}
+	*ct = emptyTime{parsedTime}
 	return nil
 }
 
