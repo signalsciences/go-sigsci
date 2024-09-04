@@ -1905,7 +1905,7 @@ type nullTime struct {
 	time.Time
 }
 
-// UnmarshalJSON implements custom unmarshaling for customTime.
+// UnmarshalJSON implements custom unmarshaling for nullTime.
 // Handles cases where the value is either a valid time string or an empty string.
 func (ct *nullTime) UnmarshalJSON(data []byte) error {
 	// Unmarshaling as a string
