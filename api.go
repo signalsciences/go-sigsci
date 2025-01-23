@@ -3063,7 +3063,7 @@ type ResponseSimulationBody struct {
 	} `json:"data"`
 }
 
-// getSimulationOutput gets the simulation output
+// getResponseSimulationBody gets the simulation response
 func getResponseSimulationBody(response []byte) (ResponseSimulationBody, error) {
 	var responseSimulation ResponseSimulationBody
 	err := json.Unmarshal(response, &responseSimulation)
@@ -3073,7 +3073,7 @@ func getResponseSimulationBody(response []byte) (ResponseSimulationBody, error) 
 	return responseSimulation, nil
 }
 
-// SendSimulation sends a simulation test to
+// SendSimulation sends a simulation test and returns the response
 func (sc *Client) SendSimulation(corpName, siteName string, body SimulationBody) (ResponseSimulationBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
