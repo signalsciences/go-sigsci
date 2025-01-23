@@ -1887,22 +1887,22 @@ func TestCRUDSiteRequestRule(t *testing.T) {
 	}
 }
 
-func TestSendSimulator(t *testing.T) {
+func TestSendSimulation(t *testing.T) {
 	sc := NewTokenClient(testcreds.email, testcreds.token)
 	corp := testcreds.corp
 	site := testcreds.site
-	body := SimulatorBody{
+	body := SimulationBody{
 		// sample request with xss paylaod
 		SampleRequest:  `POST /?q=<script>alert(1)</script> HTTP/1.1\nHost: sample.foo\n\n`,
 		SampleResponse: `HTTP/1.1 200 OK`,
 	}
-	responseSimulator, err := sc.SendSimulator(corp, site, body)
+	responseSimulation, err := sc.SendSimulation(corp, site, body)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// check for XSS signal
 	found := false
-	for _, signal := range responseSimulator.Data.Signals {
+	for _, signal := range responseSimulation.Data.Signals {
 		if signal.Type == "XSS" {
 			found = true
 		}

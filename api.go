@@ -3040,14 +3040,14 @@ func (sc *Client) UpdateEdgeDeploymentBackends(corpName, siteName, fastlySID str
 	return err
 }
 
-// Simulator request the sample request and response for the simulator test
-type SimulatorBody struct {
+// Simulation request the sample request and response for the simulation test
+type SimulationBody struct {
 	SampleRequest  string `json:"sample_request"`
 	SampleResponse string `json:"sample_response"`
 }
 
-// SimulatorResponse the response of the simulator test
-type ResponseSimulatorBody struct {
+// SimulationResponse the response of the simulation test
+type ResponseSimulationBody struct {
 	Data struct {
 		WafResponse  int `json:"waf_response"`
 		ResponseCode int `json:"response_code"`
@@ -3063,25 +3063,25 @@ type ResponseSimulatorBody struct {
 	} `json:"data"`
 }
 
-// getSimulatorOutput gets the simulator output
-func getResponseSimulatorBody(response []byte) (ResponseSimulatorBody, error) {
-	var responseSimulator ResponseSimulatorBody
-	err := json.Unmarshal(response, &responseSimulator)
+// getSimulationOutput gets the simulation output
+func getResponseSimulationBody(response []byte) (ResponseSimulationBody, error) {
+	var responseSimulation ResponseSimulationBody
+	err := json.Unmarshal(response, &responseSimulation)
 	if err != nil {
-		return ResponseSimulatorBody{}, err
+		return ResponseSimulationBody{}, err
 	}
-	return responseSimulator, nil
+	return responseSimulation, nil
 }
 
-// SendSimulator sends a simulator test to
-func (sc *Client) SendSimulator(corpName, siteName string, body SimulatorBody) (ResponseSimulatorBody, error) {
+// SendSimulation sends a simulation test to
+func (sc *Client) SendSimulation(corpName, siteName string, body SimulationBody) (ResponseSimulationBody, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
-		return ResponseSimulatorBody{}, err
+		return ResponseSimulationBody{}, err
 	}
 	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/simulator", corpName, siteName), string(b))
 	if err != nil {
-		return ResponseSimulatorBody{}, err
+		return ResponseSimulationBody{}, err
 	}
-	return getResponseSimulatorBody(resp)
+	return getResponseSimulationBody(resp)
 }
