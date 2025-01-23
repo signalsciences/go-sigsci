@@ -3039,3 +3039,49 @@ func (sc *Client) UpdateEdgeDeploymentBackends(corpName, siteName, fastlySID str
 
 	return err
 }
+
+// Simulation request the sample request and response for the simulation test
+type SimulationBody struct {
+	SampleRequest  string `json:"sample_request"`
+	SampleResponse string `json:"sample_response"`
+}
+
+// SimulationResponse the response of the simulation test
+type ResponseSimulationBody struct {
+	Data struct {
+		WafResponse  int `json:"waf_response"`
+		ResponseCode int `json:"response_code"`
+		ResponseSize int `json:"response_size"`
+		Signals      []struct {
+			Type      string `json:"type"`
+			Location  string `json:"location"`
+			Name      string `json:"name"`
+			Value     string `json:"value"`
+			Detector  string `json:"detector"`
+			Redaction int    `json:"redaction"`
+		} `json:"signals"`
+	} `json:"data"`
+}
+
+// getResponseSimulationBody gets the simulation response
+func getResponseSimulationBody(response []byte) (ResponseSimulationBody, error) {
+	var responseSimulation ResponseSimulationBody
+	err := json.Unmarshal(response, &responseSimulation)
+	if err != nil {
+		return ResponseSimulationBody{}, err
+	}
+	return responseSimulation, nil
+}
+
+// SendSimulation sends a simulation test and returns the response
+func (sc *Client) SendSimulation(corpName, siteName string, body SimulationBody) (ResponseSimulationBody, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return ResponseSimulationBody{}, err
+	}
+	resp, err := sc.doRequest("POST", fmt.Sprintf("/v0/corps/%s/sites/%s/simulator", corpName, siteName), string(b))
+	if err != nil {
+		return ResponseSimulationBody{}, err
+	}
+	return getResponseSimulationBody(resp)
+}
