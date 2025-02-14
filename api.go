@@ -2924,8 +2924,24 @@ type EdgeDeployment struct {
 	ServicesAttached []FastlyService `json:"ServicesAttached"`
 }
 
+// GetEdgeDeployment retrieves currently deployed EdgeWafs and Fastly Services mapped to a site.
+func (sc *Client) GetEdgeDeployment(corpName, siteName string) (EdgeDeployment, error) {
+	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
+	if err != nil {
+		return EdgeDeployment{}, err
+	}
+
+	var edgeDeployment EdgeDeployment
+	err = json.Unmarshal(resp, &edgeDeployment)
+	if err != nil {
+		return EdgeDeployment{}, err
+	}
+
+	return edgeDeployment, nil
+}
+
 type CreateOrUpdateEdgeDeploymentBody struct {
-	AuthorizedServices *[]string `json:"authorizedServices,omitempty"`
+	AuthorizedServices *[]string `json:"authorizedServices,omitempty"` // Authorised Compute Services
 }
 
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment and configures the site for Edge Deployment.
