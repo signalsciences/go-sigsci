@@ -2924,41 +2924,19 @@ type EdgeDeployment struct {
 	ServicesAttached []FastlyService `json:"ServicesAttached"`
 }
 
-// GetEdgeDeployment retrieves currently deployed EdgeWafs and Fastly Services mapped to a site..
-func (sc *Client) GetEdgeDeployment(corpName, siteName string) (EdgeDeployment, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
-	if err != nil {
-		return EdgeDeployment{}, err
-	}
-
-	var edgeDeployment EdgeDeployment
-	err = json.Unmarshal(resp, &edgeDeployment)
-	if err != nil {
-		return EdgeDeployment{}, err
-	}
-
-	return edgeDeployment, nil
+type CreateOrUpdateEdgeDeploymentBody struct {
+	AuthorizedServices *[]string `json:"authorizedServices,omitempty"`
 }
 
-// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
-func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, authorizedServices []string) error {
-	payload := make(map[string]interface{})
-	if len(authorizedServices) > 0 {
-		payload["authorizedServices"] = authorizedServices
-	}
-	// Convert payload to JSON if it contains data
-	var b []byte
-	var err error
-	if len(payload) > 0 {
-		b, err = json.Marshal(payload)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), string(b))
+// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment and configures the site for Edge Deployment.
+// Optional: facilitates `authorizedServices` as input to authorize a compute@edge instance.
+func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, body CreateOrUpdateEdgeDeploymentBody) error {
+	b, err := json.Marshal(body)
 	if err != nil {
 		return err
 	}
+
+	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), string(b))
 	return err
 }
 
