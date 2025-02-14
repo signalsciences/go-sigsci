@@ -2924,41 +2924,44 @@ type EdgeDeployment struct {
 	ServicesAttached []FastlyService `json:"ServicesAttached"`
 }
 
-// GetEdgeDeployment retrieves currently deployed EdgeWafs and Fastly Services mapped to a site..
-func (sc *Client) GetEdgeDeployment(corpName, siteName string) (EdgeDeployment, error) {
-	resp, err := sc.doRequest("GET", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
-	if err != nil {
-		return EdgeDeployment{}, err
-	}
-
-	var edgeDeployment EdgeDeployment
-	err = json.Unmarshal(resp, &edgeDeployment)
-	if err != nil {
-		return EdgeDeployment{}, err
-	}
-
-	return edgeDeployment, nil
+// EdgeDeploymentRequest defines the structure of the optional request body for creating an EdgeDeployment.
+type EdgeDeploymentCreate struct {
+	AuthorizedServices []string `json:"authorizedServices,omitempty"`
 }
 
-// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
+// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF and configures the site for Edge Deployment.
+// Takes in optional authorizedServices body to allow authorization of compute@edge services.
 func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, authorizedServices []string) error {
-	payload := make(map[string]interface{})
-	if len(authorizedServices) > 0 {
-		payload["authorizedServices"] = authorizedServices
+	reqBody := EdgeDeploymentCreate{
+		AuthorizedServices: authorizedServices,
 	}
-	// Convert payload to JSON if it contains data
-	var b []byte
-	var err error
-	if len(payload) > 0 {
-		b, err = json.Marshal(payload)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), string(b))
+
+	b, err := json.Marshal(reqBody)
 	if err != nil {
 		return err
 	}
+
+	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), string(b))
+	return err
+}
+
+// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF and configures the site for Edge Deployment, with optional authorizedServices payload to authorize
+// compute@edge services for inspection.
+func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, authorizedServices []string) error {
+	var reqBody string
+
+	// Construct `
+	if len(authorizedServices) > 0 {
+		b, err := json.Marshal(map[string]interface{}{
+			"authorizedServices": authorizedServices,
+		})
+		if err != nil {
+			return err
+		}
+		reqBody = string(b)
+	}
+
+	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), reqBody)
 	return err
 }
 
