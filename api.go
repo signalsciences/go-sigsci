@@ -2924,19 +2924,14 @@ type EdgeDeployment struct {
 	ServicesAttached []FastlyService `json:"ServicesAttached"`
 }
 
-// EdgeDeploymentRequest defines the structure of the optional request body for creating an EdgeDeployment.
-type EdgeDeploymentCreate struct {
-	AuthorizedServices []string `json:"authorizedServices,omitempty"`
+type CreateOrUpdateEdgeDeploymentBody struct {
+	AuthorizedServices *[]string `json:"authorizedServices,omitempty"`
 }
 
-// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF and configures the site for Edge Deployment.
-// Takes in optional authorizedServices body to allow authorization of compute@edge services.
-func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, authorizedServices []string) error {
-	reqBody := EdgeDeploymentCreate{
-		AuthorizedServices: authorizedServices,
-	}
-
-	b, err := json.Marshal(reqBody)
+// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment and configures the site for Edge Deployment.
+// Optional: facilitates `authorizedServices` as input to authorize a compute@edge instance.
+func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, body CreateOrUpdateEdgeDeploymentBody) error {
+	b, err := json.Marshal(body)
 	if err != nil {
 		return err
 	}
