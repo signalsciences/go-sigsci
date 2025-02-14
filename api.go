@@ -2945,26 +2945,6 @@ func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, author
 	return err
 }
 
-// CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF and configures the site for Edge Deployment, with optional authorizedServices payload to authorize
-// compute@edge services for inspection.
-func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, authorizedServices []string) error {
-	var reqBody string
-
-	// Construct `
-	if len(authorizedServices) > 0 {
-		b, err := json.Marshal(map[string]interface{}{
-			"authorizedServices": authorizedServices,
-		})
-		if err != nil {
-			return err
-		}
-		reqBody = string(b)
-	}
-
-	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), reqBody)
-	return err
-}
-
 // DeleteEdgeDeployment deletes an edge deployment
 func (sc *Client) DeleteEdgeDeployment(corpName, siteName string) error {
 	_, err := sc.doRequest("DELETE", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
