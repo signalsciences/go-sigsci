@@ -2941,9 +2941,24 @@ func (sc *Client) GetEdgeDeployment(corpName, siteName string) (EdgeDeployment, 
 }
 
 // CreateOrUpdateEdgeDeployment initializes the Next-Gen WAF deployment in Compute@Edge and configures the site for Edge Deployment.
-func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string) error {
-	_, err := sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), "")
-
+func (sc *Client) CreateOrUpdateEdgeDeployment(corpName, siteName string, authorizedServices []string) error {
+	payload := make(map[string]interface{})
+	if len(authorizedServices) > 0 {
+		payload["authorizedServices"] = authorizedServices
+	}
+	// Convert payload to JSON if it contains data
+	var b []byte
+	var err error
+	if len(payload) > 0 {
+		b, err = json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = sc.doRequest("PUT", fmt.Sprintf("/v0/corps/%s/sites/%s/edgeDeployment", corpName, siteName), string(b))
+	if err != nil {
+		return err
+	}
 	return err
 }
 
