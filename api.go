@@ -86,6 +86,26 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		return []byte{}, err
 	}
 
+	// Handle unexpected redirects, and print location.
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		location, err := resp.Location()
+		if err != nil {
+			return nil, fmt.Errorf("received unexpected redirect (%d) in response with no location", resp.StatusCode)
+		}
+		return nil, fmt.Errorf("received unexpected redirect (%d) in response with location: %s", resp.StatusCode, location)
+	}
+
+	// Handle unexpected HTML responses, truncate at 300 characters to avoid stdout bombing.
+	var maxHTMLLength = 300
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.Contains(contentType, "application/json") {
+		truncatedBody := string(body)
+		if strings.Contains(contentType, "text/html") && len(truncatedBody) > maxHTMLLength {
+			truncatedBody = truncatedBody[:maxHTMLLength] + "...[truncated]"
+		}
+		return body, fmt.Errorf("received unexpected content-type (%s) response:\n%s", contentType, truncatedBody)
+	}
+
 	switch method {
 	case "GET":
 		if resp.StatusCode != http.StatusOK {
@@ -2881,7 +2901,11 @@ func (sc *Client) GetSitePrimaryAgentKey(corpName, siteName string) (PrimaryAgen
 }
 
 func (sc *Client) doRequestDetailed(method, url, reqBody string) (*http.Response, error) {
-	client := &http.Client{}
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	var b io.Reader
 	if reqBody != "" {
