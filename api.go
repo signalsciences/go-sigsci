@@ -95,7 +95,7 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		return nil, fmt.Errorf("received unexpected redirect (%d) in response with location: %s", resp.StatusCode, location)
 	}
 
-	// Handle unexpected HTML responses, truncate at 300 characters to avoid stdout bombing.
+	// Handle unexpected responses, truncate at 300 characters to avoid bombing stderr.
 	var maxHTMLLength = 300
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.Contains(contentType, "application/json") {
@@ -103,7 +103,10 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 		if strings.Contains(contentType, "text/html") && len(truncatedBody) > maxHTMLLength {
 			truncatedBody = truncatedBody[:maxHTMLLength] + "...[truncated]"
 		}
-		return body, fmt.Errorf("received unexpected content-type (%s) response:\n%s", contentType, truncatedBody)
+		return body, fmt.Errorf(
+			"received unexpected response:\nStatus: %s\nContent Type: %s\nBody:\n%s",
+			resp.Status, contentType, truncatedBody,
+		)
 	}
 
 	switch method {
