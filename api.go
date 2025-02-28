@@ -2153,7 +2153,7 @@ type Condition struct {
 
 // Action contains the rule action
 type Action struct {
-	Type             string `json:"type,omitempty"` //(block, allow, exclude, browserChallenge)
+	Type             string `json:"type,omitempty"` //(block, allow, exclude, browserChallenge, dynamicChallenge)
 	Signal           string `json:"signal,omitempty"`
 	ResponseCode     int    `json:"responseCode,omitempty"`     //(400-499)
 	RedirectURL      string `json:"redirectURL,omitempty"`      // requires ResponseCode 301 or 302
