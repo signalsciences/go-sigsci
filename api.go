@@ -98,7 +98,7 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 	// Handle unexpected HTML responses, truncate at 300 characters to avoid stdout bombing.
 	var maxHTMLLength = 300
 	contentType := resp.Header.Get("Content-Type")
-	if !strings.Contains(contentType, "application/json") {
+	if method != "DELETE" && !strings.Contains(contentType, "application/json") {
 		truncatedBody := string(body)
 		if strings.Contains(contentType, "text/html") && len(truncatedBody) > maxHTMLLength {
 			truncatedBody = truncatedBody[:maxHTMLLength] + "...[truncated]"
