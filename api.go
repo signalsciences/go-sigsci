@@ -252,7 +252,7 @@ const (
 type CorpUser struct {
 	Name        string
 	Email       string
-	Memberships map[string]string
+	Memberships map[string]interface{}
 	Role        string
 	Status      string
 	MFAEnabled  bool
