@@ -2095,7 +2095,7 @@ func (sc *Client) GetTimeseries(corpName, siteName string, query url.Values) ([]
 // AttackThreshold
 type AttackThreshold struct {
 	Interval  int `json:"interval,omitempty"`  // Interval in minutes of threshold. Valid options 1, 10, 60
-	Threshold int `json:"threshold,omitempty"` // Threshold from 1 - 10000
+	Threshold int `json:"threshold,omitempty"` // Threshold from 1 - 100000
 }
 
 // CreateSiteBody is the structure required to create a Site.
@@ -2805,7 +2805,7 @@ type DetectionUpdateBody struct {
 type AlertUpdateBody struct {
 	LongName             string `json:"longName"`
 	Interval             int    `json:"interval"`  // 1, 10 or 60
-	Threshold            int    `json:"threshold"` // greater than 0, max 10000
+	Threshold            int    `json:"threshold"` // greater than 0, max 100000
 	SkipNotifications    bool   `json:"skipNotifications,omitempty"`
 	Enabled              bool   `json:"enabled"`
 	Action               string `json:"action"`
