@@ -96,7 +96,7 @@ func (sc *Client) doRequest(method, url, reqBody string) ([]byte, error) {
 	}
 
 	// Handle unexpected HTML responses, truncate at 300 characters to avoid stdout bombing.
-	var maxHTMLLength = 300
+	maxHTMLLength := 300
 	contentType := resp.Header.Get("Content-Type")
 	if resp.StatusCode != 204 && !strings.Contains(contentType, "application/json") {
 		truncatedBody := string(body)
@@ -2158,6 +2158,7 @@ type Action struct {
 	ResponseCode     int    `json:"responseCode,omitempty"`     //(400-499)
 	RedirectURL      string `json:"redirectURL,omitempty"`      // requires ResponseCode 301 or 302
 	AllowInteractive bool   `json:"allowInteractive,omitempty"` // used with browserChallenge
+	DeceptionType    string `json:"deceptionType,omitempty"`    // used with deception
 }
 
 // ClientIdentifier contains the client identifier fields for site rules of type rate_limit
